@@ -318,36 +318,3 @@ service cloud.firestore {
     </script>
 </body>
 </html>
-```
-
----
-### **Step 2: Update Your Live Site**
-
-Now, you will replace the old file on your GitHub repository with this new one.
-
-1.  **Save the New Code:** Save the code from the document above as a file named `index.html`.
-2.  **Go to Your GitHub Repository:** Go to your repository here: **[https://github.com/sporttalentbitola/sporttalentbitola.github.io](https://github.com/sporttalentbitola/sporttalentbitola.github.io)**
-3.  **Delete the Old File:** Click on the current `index.html` file, then click the **trash can icon** 🗑️ to delete it. Commit the change.
-4.  **Upload the New File:** Go back to the main repository page, click **Add file** > **Upload files**, and drag your new `index.html` file into the box. Commit the change.
-
----
-### **Step 3: Fix the Database Rules (The Final Step)**
-
-This is the most important step to fix the connection error.
-
-1.  **Go to Your Firebase Project:** Click this link to go directly to the rules page for your database: **[https://console.firebase.google.com/project/sporttalent-c3919/firestore/rules](https://console.firebase.google.com/project/sporttalent-c3919/firestore/rules)**
-2.  **Replace the Rules:** You will see some text in an editor. Delete all of it and replace it with this:
-
-    ```
-    rules_version = '2';
-    service cloud.firestore {
-      match /databases/{database}/documents {
-        match /{document=**} {
-          allow read, write: if true;
-        }
-      }
-    }
-    ```
-3.  **Publish:** Click the **Publish** button.
-
-That's it! After you complete these three steps, your live Netlify URL will be running the version of the app that connects to your database. Any data you add on one device will be saved online and will appear on all your other devic
