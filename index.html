@@ -61,6 +61,7 @@
                 <button onclick="showTab('players')" class="tab py-4 px-6 text-gray-500 hover:text-red-500 border-b-2 border-transparent transition duration-300 flex-shrink-0" data-tab="players">Player List</button>
                 <button onclick="showTab('requests')" class="tab py-4 px-6 text-gray-500 hover:text-red-500 border-b-2 border-transparent transition duration-300 flex-shrink-0" data-tab="requests">Club Requests</button>
                 <button onclick="showTab('contacts')" class="tab py-4 px-6 text-gray-500 hover:text-red-500 border-b-2 border-transparent transition duration-300 flex-shrink-0" data-tab="contacts">Contacts</button>
+                <button onclick="showTab('settings')" class="tab py-4 px-6 text-gray-500 hover:text-red-500 border-b-2 border-transparent transition duration-300 flex-shrink-0" data-tab="settings">Settings</button>
             </nav>
         </div>
 
@@ -78,7 +79,7 @@
     <script type="module">
         // Import functions from the Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         // --- Your web app's Firebase configuration ---
         const firebaseConfig = {
@@ -90,7 +91,7 @@
             appId: "1:981309667492:web:b0d0db7f9db8ce1f9b4e31"
         };
         // ---------------------------------------------------------
-
+        
         // --- Initialize Firebase and Application ---
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -100,12 +101,14 @@
             profiles: [],
             clubRequests: [],
             reminders: [],
-            settings: {}
+            settings: {
+                password: "" // Default to no password
+            }
         };
 
         // --- CONSTANTS ---
         const PROFILE_TYPES = ['Player', 'Coach', 'Sporting Director', 'President', 'Scout'];
-        const POSITIONS = ["Goalkeeper (GK)", "Centre-Back (CB)", "Right-Back (RB)", "Left-Back (LB)", "Defensive Midfielder (DM)", "Central Midfielder (CM)", "Attacking Midfielder (AM)", "Right Winger (RW)", "Left Winger (LW)", "Striker (ST)"];
+        const POSITIONS = ["Goalkeeper (GK)", "Right-Back (RB)", "Left-Back (LB)", "Centre-Back (CB)", "Defensive Midfielder (DM)", "Central Midfielder (CM)", "Attacking Midfielder (AM)", "Right Winger (RW)", "Left Winger (LW)", "Striker (ST)"];
         const SALARY_RANGES = ["< 5k", "5k - 10k", "10k - 20k", "> 20k"];
 
         // --- ERROR HANDLER ---
@@ -142,7 +145,7 @@ service cloud.firestore {
                 localDB.profiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 refreshCurrentTab();
             }, handleFirestoreError);
-            onSnapshot(collection(db, "clubRequests"), (snapshot) => {
+            onSnapshot(query(collection(db, "clubRequests"), orderBy("createdAt", "desc")), (snapshot) => {
                 localDB.clubRequests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 refreshCurrentTab();
             }, handleFirestoreError);
@@ -152,6 +155,10 @@ service cloud.firestore {
             }, handleFirestoreError);
             onSnapshot(doc(db, "settings", "introMessage"), (doc) => {
                 localDB.settings.introMessage = doc.exists() ? doc.data().text : 'Default intro message...';
+                refreshCurrentTab();
+            }, handleFirestoreError);
+            onSnapshot(doc(db, "settings", "security"), (doc) => {
+                localDB.settings.password = doc.exists() ? doc.data().confirmationPassword : "";
                 refreshCurrentTab();
             }, handleFirestoreError);
             
@@ -165,16 +172,18 @@ service cloud.firestore {
         window.openProfileModal = openProfileModal;
         window.openClubRequestModal = openClubRequestModal;
         window.openDeleteModal = openDeleteModal;
-        window.deleteItem = deleteItem;
         window.openReportModal = openReportModal;
         window.copyReport = copyReport;
-        window.saveProfile = saveProfile;
         window.togglePlayerDetails = togglePlayerDetails;
-        window.saveClubRequest = saveClubRequest;
         window.addReminder = addReminder;
         window.toggleReminder = toggleReminder;
         window.saveIntroMessage = saveIntroMessage;
         window.shareIntroMessage = shareIntroMessage;
+        window.openClubRequestReportModal = openClubRequestReportModal;
+        window.openAllClubRequestsReportModal = openAllClubRequestsReportModal;
+        window.requestSaveConfirmation = requestSaveConfirmation;
+        window.requestDeleteConfirmation = requestDeleteConfirmation;
+        window.savePassword = savePassword;
 
         // --- UI RENDERING FUNCTIONS ---
         function refreshCurrentTab() {
@@ -198,6 +207,7 @@ service cloud.firestore {
                     case 'players': contentHTML = getPlayerListHTML(); break;
                     case 'requests': contentHTML = getClubRequestsHTML(); break;
                     case 'contacts': contentHTML = getContactsHTML(); break;
+                    case 'settings': contentHTML = getSettingsHTML(); break;
                 }
                 container.innerHTML = contentHTML;
                 if (tabName === 'dashboard') {
@@ -223,35 +233,55 @@ service cloud.firestore {
         }
 
         function getPlayerListHTML() {
-            const groupedByPosition = POSITIONS.reduce((acc, position) => {
-                const playersInPosition = localDB.profiles.filter(p => p.profileType === 'Player' && p.playerDetails && p.playerDetails.position === position);
-                if (playersInPosition.length > 0) acc[position] = playersInPosition;
-                return acc;
-            }, {});
-            if (Object.keys(groupedByPosition).length === 0) return `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No players found. Add one using the '+' button.</div>`;
-            return Object.entries(groupedByPosition).map(([position, players]) => `<div class="space-y-4"><h2 class="text-xl font-bold border-b-2 border-red-400 pb-2 mb-4">${position.replace(/\s\(.*\)/, 's')}</h2>${players.map(player => { const highlightClass = player.playerDetails.isHighlighted ? 'bg-green-50 border-green-400' : 'bg-white'; const statusText = player.isFreeAgent ? 'Free Agent' : `at ${player.club}`; const statusBadgeColor = player.isFreeAgent ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'; const statusBadgeText = player.isFreeAgent ? 'Free Agent' : 'Active Contract'; return `<div class="p-4 rounded-lg shadow-md mb-4 border-l-4 ${highlightClass} flex flex-col md:flex-row justify-between items-start md:items-center"><div><p class="text-lg font-bold ${player.playerDetails.isHighlighted ? 'text-green-800' : ''}">${player.firstName} ${player.lastName}</p><p class="text-gray-600">${player.playerDetails.position.match(/\((.*?)\)/)[1]} at ${statusText}</p><span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${statusBadgeColor} mt-2">${statusBadgeText}</span></div><div class="flex space-x-2 mt-4 md:mt-0"><button onclick="openReportModal('${player.id}')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-3 rounded-md text-sm">View Profile</button><button onclick="openProfileModal('${player.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button><button onclick="openDeleteModal('profile', '${player.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button></div></div>`; }).join('')}</div>`).join('');
+            const players = localDB.profiles.filter(p => p.profileType === 'Player');
+            players.sort((a, b) => { const posA = POSITIONS.indexOf(a.playerDetails.position); const posB = POSITIONS.indexOf(b.playerDetails.position); if (posA !== posB) return posA - posB; return a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName); });
+            const groupedByPosition = players.reduce((acc, player) => { const position = player.playerDetails.position; if (!acc[position]) acc[position] = []; acc[position].push(player); return acc; }, {});
+            if (players.length === 0) return `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No players found. Add one using the '+' button.</div>`;
+            return POSITIONS.map(position => { if (!groupedByPosition[position]) return ''; const playersInGroup = groupedByPosition[position]; return `<div class="space-y-4"><h2 class="text-xl font-bold border-b-2 border-red-400 pb-2 mb-4">${position.replace(/\s\(.*\)/, 's')}</h2>${playersInGroup.map(player => { const highlightClass = player.playerDetails.isHighlighted ? 'bg-green-50 border-green-400' : 'bg-white'; const statusText = player.isFreeAgent ? 'Free Agent' : `at ${player.club}`; const statusBadgeColor = player.isFreeAgent ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'; const statusBadgeText = player.isFreeAgent ? 'Free Agent' : 'Active Contract'; return `<div class="p-4 rounded-lg shadow-md mb-4 border-l-4 ${highlightClass} flex flex-col md:flex-row justify-between items-start md:items-center"><div><p class="text-lg font-bold ${player.playerDetails.isHighlighted ? 'text-green-800' : ''}">${player.firstName} ${player.lastName}</p><p class="text-gray-600">${player.playerDetails.position.match(/\((.*?)\)/)[1]} at ${statusText}</p><span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${statusBadgeColor} mt-2">${statusBadgeText}</span></div><div class="flex space-x-2 mt-4 md:mt-0"><button onclick="openReportModal('${player.id}')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-3 rounded-md text-sm">View Profile</button><button onclick="openProfileModal('${player.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button><button onclick="openDeleteModal('profile', '${player.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button></div></div>`; }).join('')}</div>`; }).join('');
         }
 
         function getClubRequestsHTML() {
-            if (localDB.clubRequests.length === 0) return `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No club requests yet.</div>`;
-            return localDB.clubRequests.map(req => `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center"><div><p class="text-lg font-bold">${req.clubName} <span class="text-sm text-gray-500 font-normal">- ${req.country}</span></p><div class="flex flex-wrap gap-2 mt-2">${req.positions.map(p => `<span class="bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded-full">${p}</span>`).join('')}</div><p class="text-sm text-gray-600 mt-2">Salary Range: <span class="font-semibold">${req.salaryRange}</span></p><p class="text-xs text-gray-500 mt-1">${req.notes || ''}</p></div><div class="flex space-x-2"><button onclick="openClubRequestModal('${req.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button><button onclick="openDeleteModal('request', '${req.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button></div></div>`).join('');
+            let requestsHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">Club Requests</h2><button onclick="openAllClubRequestsReportModal()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Generate Full Report</button></div>`;
+            if (localDB.clubRequests.length === 0) { requestsHTML += `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No club requests yet.</div>`; return requestsHTML; }
+            requestsHTML += localDB.clubRequests.map(req => `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center mb-4"><div><p class="text-lg font-bold">${req.clubName} <span class="text-sm text-gray-500 font-normal">- ${req.country}</span></p><div class="flex flex-wrap gap-2 mt-2">${req.positions.map(p => `<span class="bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded-full">${p}</span>`).join('')}</div><p class="text-sm text-gray-600 mt-2">Salary Range: <span class="font-semibold">${req.salaryRange}</span></p><p class="text-xs text-gray-500 mt-1">${req.notes || ''}</p></div><div class="flex space-x-2"><button onclick="openClubRequestReportModal('${req.id}')" class="text-gray-500 hover:text-gray-700 p-2"><i class="fas fa-share-alt fa-lg"></i></button><button onclick="openClubRequestModal('${req.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button><button onclick="openDeleteModal('request', '${req.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button></div></div>`).join('');
+            return requestsHTML;
         }
 
         function getContactsHTML() {
             const contacts = localDB.profiles.filter(p => p.profileType !== 'Player');
+            contacts.sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
             if (contacts.length === 0) return `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No contacts yet.</div>`;
-            return contacts.map(contact => { const statusText = contact.isWithoutClub ? 'Without a club' : `at ${contact.club}`; return `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center"><div><p class="text-lg font-bold">${contact.firstName} ${contact.lastName} <span class="text-sm text-blue-500 font-semibold">${contact.profileType}</span></p><p class="text-gray-600">${statusText}</p><div class="text-sm text-gray-500 mt-2"><p><i class="fas fa-phone mr-2"></i>${contact.contact?.phone || 'N/A'}</p><p><i class="fas fa-link mr-2"></i>${contact.contact?.comment || 'N/A'}</p></div></div><div class="flex space-x-2"><button onclick="openProfileModal('${contact.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button><button onclick="openDeleteModal('profile', '${contact.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button></div></div>`; }).join('');
+            return contacts.map(contact => { const statusText = contact.isWithoutClub ? 'Without a club' : `at ${contact.club}`; return `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center mb-4"><div><p class="text-lg font-bold">${contact.firstName} ${contact.lastName} <span class="text-sm text-blue-500 font-semibold">${contact.profileType}</span></p><p class="text-gray-600">${statusText}</p><div class="text-sm text-gray-500 mt-2"><p><i class="fas fa-phone mr-2"></i>${contact.contact?.phone || 'N/A'}</p><p><i class="fas fa-link mr-2"></i>${contact.contact?.comment || 'N/A'}</p></div></div><div class="flex space-x-2"><button onclick="openProfileModal('${contact.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button><button onclick="openDeleteModal('profile', '${contact.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button></div></div>`; }).join('');
+        }
+
+        function getSettingsHTML() {
+            const currentPassword = localDB.settings.password || "";
+            const isPasswordSet = currentPassword.length > 0;
+            return `
+                <div class="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">
+                    <h2 class="text-2xl font-bold mb-4">Security Settings</h2>
+                    <div class="mb-6">
+                        <label for="password-setting" class="block text-sm font-medium text-gray-700">Confirmation Password</label>
+                        <input type="text" id="password-setting" value="${currentPassword}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
+                        <p class="mt-2 text-xs text-gray-500">Set a password to confirm saves and deletes. Leave blank to disable this feature.</p>
+                    </div>
+                    <div class="flex justify-end">
+                        <button onclick="savePassword()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Save Settings</button>
+                    </div>
+                    <div id="settings-status" class="mt-4 text-green-600 text-sm"></div>
+                </div>
+            `;
         }
         
         // --- DATABASE ACTIONS ---
-        async function addReminder() { const input = document.getElementById('new-reminder-input'); if (input.value.trim()) { await addDoc(collection(db, "reminders"), { text: input.value.trim(), isCompleted: false, createdAt: new Date() }); input.value = ''; } }
+        async function addReminder() { const input = document.getElementById('new-reminder-input'); if (input.value.trim()) { await addDoc(collection(db, "reminders"), { text: input.value.trim(), isCompleted: false, createdAt: serverTimestamp() }); input.value = ''; } }
         async function toggleReminder(id) { const reminder = localDB.reminders.find(r => r.id === id); await updateDoc(doc(db, "reminders", id), { isCompleted: !reminder.isCompleted }); }
         async function saveIntroMessage() { const message = document.getElementById('intro-message').value; await setDoc(doc(db, "settings", "introMessage"), { text: message }); alert('Intro message saved!'); }
         function shareIntroMessage() { const message = encodeURIComponent(localDB.settings.introMessage); window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank'); }
-        async function deleteItem(type, id) { if (type === 'profile') await deleteDoc(doc(db, "profiles", id)); else if (type === 'request') await deleteDoc(doc(db, "clubRequests", id)); else if (type === 'reminder') await deleteDoc(doc(db, "reminders", id)); closeModal(); }
+        async function executeDeleteItem(type, id) { if (type === 'profile') await deleteDoc(doc(db, "profiles", id)); else if (type === 'request') await deleteDoc(doc(db, "clubRequests", id)); else if (type === 'reminder') await deleteDoc(doc(db, "reminders", id)); closeModal(); }
 
-        async function saveProfile(id) {
-            const isEditing = id !== null;
+        async function executeSaveProfile(id) {
+            const isEditing = id !== 'null';
             const profileType = document.getElementById('profileType').value;
             const isPlayer = profileType === 'Player';
             const newProfileData = { profileType, firstName: document.getElementById('firstName').value, lastName: document.getElementById('lastName').value, club: document.getElementById('club').value, isFreeAgent: isPlayer ? document.getElementById('isFreeAgent').checked : false, isWithoutClub: !isPlayer ? document.getElementById('isFreeAgent').checked : false, };
@@ -261,25 +291,77 @@ service cloud.firestore {
             closeModal();
         }
 
-        async function saveClubRequest(id) {
-            const isEditing = id !== null;
+        async function executeSaveClubRequest(id) {
+            const isEditing = id !== 'null';
             const selectedPositions = Array.from(document.getElementById('reqPositions').selectedOptions).map(option => option.value);
             const newRequestData = { clubName: document.getElementById('clubName').value, country: document.getElementById('country').value, positions: selectedPositions, salaryRange: document.getElementById('reqSalary').value, notes: document.getElementById('reqNotes').value };
-            if (isEditing) { await setDoc(doc(db, "clubRequests", id), newRequestData); } else { await addDoc(collection(db, "clubRequests"), newRequestData); }
+            if (isEditing) { await updateDoc(doc(db, "clubRequests", id), newRequestData); } else { newRequestData.createdAt = serverTimestamp(); await addDoc(collection(db, "clubRequests"), newRequestData); }
             closeModal();
         }
 
-        // --- MODAL MANAGEMENT ---
+        async function savePassword() {
+            const newPassword = document.getElementById('password-setting').value;
+            const statusDiv = document.getElementById('settings-status');
+            try {
+                await setDoc(doc(db, "settings", "security"), { confirmationPassword: newPassword });
+                statusDiv.textContent = "Password updated successfully!";
+                setTimeout(() => statusDiv.textContent = "", 3000);
+            } catch (error) {
+                statusDiv.textContent = "Error saving password.";
+                console.error("Error saving password:", error);
+            }
+        }
+
+        // --- MODAL & CONFIRMATION MANAGEMENT ---
         function closeModal() { document.getElementById('modal-container').innerHTML = ''; }
         function openAddChoiceModal() { document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-sm p-6"><h3 class="text-xl font-bold text-center mb-6">What to add?</h3><div class="space-y-3"><button onclick="openProfileModal()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">New Player / Contact</button><button onclick="openClubRequestModal()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg">New Club Request</button><button onclick="closeModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg mt-4">Cancel</button></div></div>`; }
-        function openDeleteModal(type, id) { document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-sm p-6 text-center"><i class="fas fa-exclamation-triangle text-5xl text-red-400 mb-4"></i><h3 class="text-xl font-bold mb-2">Are you sure?</h3><p class="text-gray-600 mb-6">This action cannot be undone.</p><div class="flex justify-center space-x-4"><button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg">Cancel</button><button onclick="deleteItem('${type}', '${id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Delete</button></div></div>`; }
+        
+        function openDeleteModal(type, id) {
+            document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-sm p-6 text-center"><i class="fas fa-exclamation-triangle text-5xl text-red-400 mb-4"></i><h3 class="text-xl font-bold mb-2">Are you sure?</h3><p class="text-gray-600 mb-6">This action cannot be undone.</p><div class="flex justify-center space-x-4"><button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg">Cancel</button><button onclick="requestDeleteConfirmation('${type}', '${id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Delete</button></div></div>`;
+        }
+        
+        function requestDeleteConfirmation(type, id) {
+            const password = localDB.settings.password;
+            if (password && password.length > 0) {
+                openConfirmationModal(() => executeDeleteItem(type, id));
+            } else {
+                executeDeleteItem(type, id);
+            }
+        }
+
+        function requestSaveConfirmation(type, id) {
+            const password = localDB.settings.password;
+            if (password && password.length > 0) {
+                if (type === 'profile') { openConfirmationModal(() => executeSaveProfile(id)); } 
+                else if (type === 'request') { openConfirmationModal(() => executeSaveClubRequest(id)); }
+            } else {
+                if (type === 'profile') { executeSaveProfile(id); } 
+                else if (type === 'request') { executeSaveClubRequest(id); }
+            }
+        }
+
+        function openConfirmationModal(callback) {
+            const modalHTML = `<div class="modal-backdrop" onclick="closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-sm p-6"><h3 class="text-xl font-bold mb-4">Confirm Action</h3><p class="text-gray-600 mb-4">Please enter the password to proceed.</p><input type="password" id="password-input" class="w-full border border-gray-300 rounded-md p-2 mb-4"><div id="password-error" class="text-red-500 text-sm mb-4 hidden">Incorrect password. Please try again.</div><div class="flex justify-end space-x-3"><button type="button" onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="button" id="confirm-action-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Confirm</button></div></div>`;
+            document.getElementById('modal-container').innerHTML = modalHTML;
+            document.getElementById('confirm-action-btn').onclick = () => {
+                const passwordInput = document.getElementById('password-input');
+                const errorDiv = document.getElementById('password-error');
+                if (passwordInput.value === localDB.settings.password) {
+                    callback();
+                } else {
+                    errorDiv.classList.remove('hidden');
+                    passwordInput.focus();
+                }
+            };
+        }
+
         function copyReport() { const textarea = document.getElementById('report-text-area'); textarea.select(); document.execCommand('copy'); alert('Report copied to clipboard!'); }
 
         function openProfileModal(id = null) {
             const isEditing = id !== null;
             const profile = isEditing ? localDB.profiles.find(p => p.id === id) : {};
             const title = isEditing ? `Edit ${profile.firstName} ${profile.lastName}` : 'Add New Person';
-            document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop"></div><div class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-full overflow-y-auto"><form onsubmit="event.preventDefault(); saveProfile(${id ? `'${id}'` : null});" class="p-6 space-y-4"><h3 class="text-2xl font-bold mb-4">${title}</h3><div id="form-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div><div id="player-details-section" class="hidden pt-4 border-t"><h4 class="text-lg font-semibold mb-2">Player Details</h4><div id="player-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div><div class="flex justify-end space-x-3 pt-4 border-t"><button type="button" onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Save</button></div></form></div></div>`;
+            document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop"></div><div class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-full overflow-y-auto"><form onsubmit="event.preventDefault(); requestSaveConfirmation('profile', '${id}');" class="p-6 space-y-4"><h3 class="text-2xl font-bold mb-4">${title}</h3><div id="form-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div><div id="player-details-section" class="hidden pt-4 border-t"><h4 class="text-lg font-semibold mb-2">Player Details</h4><div id="player-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div><div class="flex justify-end space-x-3 pt-4 border-t"><button type="button" onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Save</button></div></form></div></div>`;
             populateProfileForm(profile);
         }
 
@@ -303,7 +385,7 @@ service cloud.firestore {
             const isEditing = id !== null;
             const request = isEditing ? localDB.clubRequests.find(r => r.id === id) : {};
             const title = isEditing ? `Edit Request from ${request.clubName}` : 'Add New Club Request';
-            document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop"></div><div class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg"><form onsubmit="event.preventDefault(); saveClubRequest(${id ? `'${id}'` : null});" class="p-6 space-y-4"><h3 class="text-2xl font-bold mb-4">${title}</h3><div><label class="block text-sm font-medium">Club Name*</label><input type="text" id="clubName" value="${request?.clubName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Country*</label><input type="text" id="country" value="${request?.country || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Positions (select multiple)*</label><select id="reqPositions" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-40">${POSITIONS.map(pos => `<option value="${pos}" ${request?.positions?.includes(pos) ? 'selected' : ''}>${pos}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Salary Range*</label><select id="reqSalary" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${SALARY_RANGES.map(range => `<option value="${range}" ${request?.salaryRange === range ? 'selected' : ''}>${range}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Notes</label><textarea id="reqNotes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${request?.notes || ''}</textarea></div><div class="flex justify-end space-x-3 pt-4 border-t"><button type="button" onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Save</button></div></form></div></div>`;
+            document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop"></div><div class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg"><form onsubmit="event.preventDefault(); requestSaveConfirmation('request', '${id}');" class="p-6 space-y-4"><h3 class="text-2xl font-bold mb-4">${title}</h3><div><label class="block text-sm font-medium">Club Name*</label><input type="text" id="clubName" value="${request?.clubName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Country*</label><input type="text" id="country" value="${request?.country || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Positions (select multiple)*</label><select id="reqPositions" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-40">${POSITIONS.map(pos => `<option value="${pos}" ${request?.positions?.includes(pos) ? 'selected' : ''}>${pos}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Salary Range*</label><select id="reqSalary" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${SALARY_RANGES.map(range => `<option value="${range}" ${request?.salaryRange === range ? 'selected' : ''}>${range}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Notes</label><textarea id="reqNotes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${request?.notes || ''}</textarea></div><div class="flex justify-end space-x-3 pt-4 border-t"><button type="button" onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Save</button></div></form></div></div>`;
         }
 
         function openReportModal(playerId) {
@@ -313,6 +395,33 @@ service cloud.firestore {
             const subject = encodeURIComponent(`Player Report: ${player.firstName} ${player.lastName}`);
             const body = encodeURIComponent(reportText.trim());
             document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg p-6"><h3 class="text-xl font-bold mb-4">Report for ${player.firstName} ${player.lastName}</h3><textarea id="report-text-area" readonly class="w-full h-64 bg-gray-100 p-3 rounded-md border font-mono text-sm">${reportText.trim()}</textarea><div class="flex flex-wrap justify-end gap-2 mt-4"><button onclick="copyReport()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Copy Report</button><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(reportText.trim())}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Share via WhatsApp</a><a href="mailto:?subject=${subject}&body=${body}" target="_blank" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Share via Email</a></div></div>`;
+        }
+        
+        function openClubRequestReportModal(requestId) {
+            const request = localDB.clubRequests.find(r => r.id === requestId);
+            if (!request) return;
+            const reportText = `CLUB REQUEST\n\nClub: ${request.clubName} (${request.country})\nPositions Needed: ${request.positions.join(', ')}\nSalary Range: ${request.salaryRange}\n\nNotes: ${request.notes || 'N/A'}`;
+            const subject = encodeURIComponent(`Club Request: ${request.clubName}`);
+            const body = encodeURIComponent(reportText.trim());
+            document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg p-6"><h3 class="text-xl font-bold mb-4">Report for ${request.clubName}</h3><textarea id="report-text-area" readonly class="w-full h-64 bg-gray-100 p-3 rounded-md border font-mono text-sm">${reportText.trim()}</textarea><div class="flex flex-wrap justify-end gap-2 mt-4"><button onclick="copyReport()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Copy Report</button><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(reportText.trim())}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Share via WhatsApp</a><a href="mailto:?subject=${subject}&body=${body}" target="_blank" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Share via Email</a></div></div>`;
+        }
+
+        function openAllClubRequestsReportModal() {
+            if (localDB.clubRequests.length === 0) {
+                alert("No club requests to report.");
+                return;
+            }
+            let reportText = "ALL ACTIVE CLUB REQUESTS\n\n";
+            localDB.clubRequests.forEach(req => {
+                reportText += `----------------------------------------\n`;
+                reportText += `Club: ${req.clubName} (${req.country})\n`;
+                reportText += `Positions: ${req.positions.join(', ')}\n`;
+                reportText += `Salary: ${req.salaryRange}\n`;
+                reportText += `Notes: ${req.notes || 'N/A'}\n`;
+            });
+            const subject = encodeURIComponent(`All Active Club Requests`);
+            const body = encodeURIComponent(reportText.trim());
+            document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg p-6"><h3 class="text-xl font-bold mb-4">Full Club Requests Report</h3><textarea id="report-text-area" readonly class="w-full h-64 bg-gray-100 p-3 rounded-md border font-mono text-sm">${reportText.trim()}</textarea><div class="flex flex-wrap justify-end gap-2 mt-4"><button onclick="copyReport()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Copy Report</button><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(reportText.trim())}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Share via WhatsApp</a><a href="mailto:?subject=${subject}&body=${body}" target="_blank" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Share via Email</a></div></div>`;
         }
 
     </script>
