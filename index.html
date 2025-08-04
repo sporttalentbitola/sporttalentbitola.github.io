@@ -456,7 +456,7 @@ service cloud.firestore {
 
         function openReportModal(playerId) {
             const player = localDB.profiles.find(p => p.id === playerId);
-            if (!player) return;
+            if (!player || !player.playerDetails) return;
             const reportText = `PLAYER REPORT\n\nName: ${player.firstName} ${player.lastName}\nPosition: ${player.playerDetails.position}\nStatus: ${player.isFreeAgent ? 'Free Agent' : 'Under contract at ' + player.club}\n\nDescription: A talented ${player.playerDetails.position} known for their vision and technical ability.\n\nVideo: ${player.playerDetails.videoLink}\nCV: ${player.playerDetails.cvLink}`;
             const subject = encodeURIComponent(`Player Report: ${player.firstName} ${player.lastName}`);
             const body = encodeURIComponent(reportText.trim());
