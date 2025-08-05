@@ -62,7 +62,6 @@
 
         <main id="content-area">
             <!-- App content is rendered here by JavaScript -->
-            <div class="loader"></div>
         </main>
 
     </div>
@@ -71,10 +70,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // IMPORTANT: In a real production app, you should use environment variables
-        // and server-side logic to protect your API keys.
         const firebaseConfig = {
             apiKey: "AIzaSyBpKCpXNPtkD21oB28hlGTz1KUliFXQIpI",
             authDomain: "sporttalent-c3919.firebaseapp.com",
@@ -87,12 +84,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // This local object will be kept in sync with Firestore by the listeners below.
         let localDB = {
             profiles: [],
             clubRequests: [],
             reminders: [],
-            settings: { password: "", introMessage: "" }
+            settings: { password: "" }
         };
 
         const PROFILE_TYPES = ['Player', 'Coach', 'Sporting Director', 'President', 'Scout'];
@@ -109,68 +105,30 @@
                     </div>`;
             }
         };
-        
+
         function refreshCurrentTab() {
             const activeTab = document.querySelector('.tab-active')?.dataset.tab;
-            if (activeTab) {
-                window.app.showTab(activeTab, false);
-            }
+            if (activeTab) window.app.showTab(activeTab, false);
         }
         
-        // --- Firestore Live Listeners ---
-        onSnapshot(query(collection(db, "profiles"), orderBy("firstName")), (snapshot) => {
-            localDB.profiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            refreshCurrentTab();
-        }, handleFirestoreError);
-
-        onSnapshot(query(collection(db, "clubRequests"), orderBy("createdAt", "desc")), (snapshot) => {
-            localDB.clubRequests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            refreshCurrentTab();
-        }, handleFirestoreError);
-
-        onSnapshot(query(collection(db, "reminders"), orderBy("createdAt")), (snapshot) => {
-            localDB.reminders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            refreshCurrentTab();
-        }, handleFirestoreError);
-        
-        onSnapshot(doc(db, "settings", "main"), (doc) => {
-            if (doc.exists()) {
-                const data = doc.data();
-                localDB.settings.password = data.password || "";
-                localDB.settings.introMessage = data.introMessage || "";
-            } else {
-                localDB.settings = { password: "", introMessage: "" };
-            }
-            refreshCurrentTab();
-        }, handleFirestoreError);
-
-
         const appFunctions = {
-            showTab(tabName, changeTabStyle = true) {
-                if (changeTabStyle) {
+            showTab(tabName, changeTab = true) {
+                if (changeTab) {
                     document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
                     document.querySelector(`[data-tab="${tabName}"]`).classList.add('tab-active');
                 }
                 const container = document.getElementById('content-area');
                 container.innerHTML = `<div class="loader"></div>`;
-                
                 setTimeout(() => {
                     let contentHTML = '';
-                    try {
-                        switch(tabName) {
-                            case 'dashboard': contentHTML = this.getDashboardHTML(); break;
-                            case 'players': contentHTML = this.getPlayerListHTML(); break;
-                            case 'requests': contentHTML = this.getClubRequestsHTML(); break;
-                            case 'contacts': contentHTML = this.getContactsHTML(); break;
-                            case 'settings': contentHTML = this.getSettingsHTML(); break;
-                            default: contentHTML = `<p>Tab not found.</p>`;
-                        }
-                    } catch (error) {
-                        console.error("Error rendering tab:", tabName, error);
-                        contentHTML = `<div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-6 rounded-lg shadow-md" role="alert"><p class="font-bold text-xl">Error Displaying Content</p><p class="mt-2">There was an issue rendering this tab, likely due to invalid data. Please check the console for details.</p></div>`;
+                    switch(tabName) {
+                        case 'dashboard': contentHTML = this.getDashboardHTML(); break;
+                        case 'players': contentHTML = this.getPlayerListHTML(); break;
+                        case 'requests': contentHTML = this.getClubRequestsHTML(); break;
+                        case 'contacts': contentHTML = this.getContactsHTML(); break;
+                        case 'settings': contentHTML = this.getSettingsHTML(); break;
                     }
                     container.innerHTML = contentHTML;
-
                     if (tabName === 'dashboard') {
                         const introMessageTextarea = document.getElementById('intro-message');
                         if (introMessageTextarea) introMessageTextarea.value = localDB.settings.introMessage || '';
@@ -181,60 +139,48 @@
             getDashboardHTML() {
                 const sortedReminders = [...localDB.reminders].sort((a, b) => a.isCompleted - b.isCompleted);
                 const remindersList = sortedReminders.length > 0 ? sortedReminders.map(r => `<div class="flex items-center justify-between p-2 rounded-md hover:bg-gray-100"><div class="flex items-center"><input type="checkbox" ${r.isCompleted ? 'checked' : ''} onchange="window.app.toggleReminder('${r.id}')" class="h-5 w-5 rounded border-gray-300 text-red-500 focus:ring-red-500 mr-3"><span class="${r.isCompleted ? 'line-through text-gray-400' : ''}">${r.text}</span></div><button onclick="window.app.openDeleteModal('reminder', '${r.id}')" class="text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times"></i></button></div>`).join('') : `<p class="text-center text-gray-500">No reminders. Add one below!</p>`;
-                
                 let connectionsFound = false;
                 const connectionsList = localDB.clubRequests.map(req => {
-                    const matchingPlayers = localDB.profiles.filter(p => p.profileType === 'Player' && p.playerDetails && (req.positions || []).includes(p.playerDetails.position) && req.salaryRange === p.playerDetails.salaryRequest);
-                    if (matchingPlayers.length > 0) { 
-                        connectionsFound = true; 
-                        return `<div class="bg-gray-50 p-4 rounded-lg border"><div class="mb-3"><p class="font-bold text-lg">${req.clubName}</p><p class="text-sm text-gray-600">Looking for: ${(req.positions || []).join(', ')}</p><p class="text-sm text-gray-600">Salary: ${req.salaryRange}</p></div><div class="border-t pt-3"><h4 class="font-semibold mb-2">Matching Players:</h4><ul class="space-y-1 list-disc list-inside text-sm">${matchingPlayers.map(p => {
-                            const positionMatch = p.playerDetails.position ? p.playerDetails.position.match(/\((.*?)\)/) : null;
-                            const positionAbbr = positionMatch ? positionMatch[1] : 'N/A';
-                            return `<li>${p.firstName} ${p.lastName} (${positionAbbr})</li>`;
-                        }).join('')}</ul></div></div>`;
-                    }
+                    const matchingPlayers = localDB.profiles.filter(p => p.profileType === 'Player' && p.playerDetails && req.positions.includes(p.playerDetails.position) && req.salaryRange === p.playerDetails.salaryRequest);
+                    if (matchingPlayers.length > 0) { connectionsFound = true; return `<div class="bg-gray-50 p-4 rounded-lg border"><div class="mb-3"><p class="font-bold text-lg">${req.clubName}</p><p class="text-sm text-gray-600">Looking for: ${req.positions.join(', ')}</p><p class="text-sm text-gray-600">Salary: ${req.salaryRange}</p></div><div class="border-t pt-3"><h4 class="font-semibold mb-2">Matching Players:</h4><ul class="space-y-1 list-disc list-inside text-sm">${matchingPlayers.map(p => `<li>${p.firstName} ${p.lastName} (${p.playerDetails.position.match(/\((.*?)\)/)[1]})</li>`).join('')}</ul></div></div>`; }
                     return '';
                 }).join('');
                 const connectionsHTML = connectionsFound ? connectionsList : `<p class="text-center text-gray-500 md:col-span-2">No automatic connections found.</p>`;
-                
                 return `<div class="grid grid-cols-1 lg:grid-cols-3 gap-6"><div class="lg:col-span-2 space-y-6"><div class="bg-white p-6 rounded-lg shadow-md"><h2 class="text-xl font-bold mb-4">Reminders</h2><div class="space-y-3 mb-4">${remindersList}</div><div class="flex space-x-2"><input id="new-reminder-input" type="text" placeholder="Add a new reminder..." class="flex-grow border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-red-300 focus:border-red-300"><button onclick="window.app.addReminder()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">Add</button></div></div><div class="bg-white p-6 rounded-lg shadow-md"><h2 class="text-xl font-bold mb-4">Connected Requests</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${connectionsHTML}</div></div></div><div class="lg:col-span-1"><div class="bg-white p-6 rounded-lg shadow-md"><h2 class="text-xl font-bold mb-4">My Intro Message</h2><textarea id="intro-message" class="w-full h-48 border border-gray-300 rounded-md p-2 mb-4"></textarea><div class="flex space-x-2"><button onclick="window.app.saveIntroMessage()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">Save</button><button onclick="window.app.shareIntroMessage()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md">Share</button></div></div></div></div>`;
             },
 
             getPlayerListHTML() {
-                const players = localDB.profiles.filter(p => p && p.profileType === 'Player' && p.playerDetails);
-                
+                const players = localDB.profiles.filter(p => p.profileType === 'Player' && p.playerDetails);
                 players.sort((a, b) => {
                     const posA = POSITIONS.indexOf(a.playerDetails.position);
                     const posB = POSITIONS.indexOf(b.playerDetails.position);
                     if (posA !== posB) return posA - posB;
-                    return (a.firstName || '').localeCompare(b.firstName || '');
+                    return a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName);
                 });
-                
                 const groupedByPosition = players.reduce((acc, player) => {
                     const position = player.playerDetails.position;
-                    if (position && !acc[position]) acc[position] = [];
-                    if (position) acc[position].push(player);
+                    if (!acc[position]) acc[position] = [];
+                    acc[position].push(player);
                     return acc;
                 }, {});
-
-                if (players.length === 0) return `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No players found. Add one using the "Add New" button.</div>`;
-                
+                if (players.length === 0) return `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No players found.</div>`;
                 return POSITIONS.map(position => {
                     if (!groupedByPosition[position]) return '';
                     const playersInGroup = groupedByPosition[position];
-                    return `<div class="space-y-4 mb-8"><h2 class="text-xl font-bold border-b-2 border-red-400 pb-2 mb-4">${position.replace(/\s\(.*\)/, 's')}</h2>${playersInGroup.map(player => {
+                    return `<div class="space-y-4"><h2 class="text-xl font-bold border-b-2 border-red-400 pb-2 mb-4">${position.replace(/\s\(.*\)/, 's')}</h2>${playersInGroup.map(player => {
                         const highlightClass = player.playerDetails.isHighlighted ? 'bg-green-50 border-green-400' : 'bg-white';
-                        const statusText = player.isFreeAgent ? 'Free Agent' : `at ${player.club || 'Unknown Club'}`;
-                        const positionMatch = player.playerDetails.position?.match(/\((.*?)\)/);
-                        const positionAbbr = positionMatch ? positionMatch[1] : 'N/A';
-
-                        return `<div class="p-4 rounded-lg shadow-md border-l-4 ${highlightClass} flex flex-col md:flex-row justify-between items-start md:items-center">
+                        const statusText = player.isFreeAgent ? 'Free Agent' : `at ${player.club}`;
+                        const statusBadgeColor = player.isFreeAgent ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
+                        return `<div class="p-4 rounded-lg shadow-md mb-4 border-l-4 ${highlightClass} flex flex-col md:flex-row justify-between items-start md:items-center">
                             <div>
-                                <p class="text-lg font-bold ${player.playerDetails.isHighlighted ? 'text-green-800' : ''}">${player.firstName || ''} ${player.lastName || ''}</p>
-                                <p class="text-gray-600">${positionAbbr} - ${statusText}</p>
+                                <p class="text-lg font-bold ${player.playerDetails.isHighlighted ? 'text-green-800' : ''}">${player.firstName} ${player.lastName}</p>
+                                <p class="text-gray-600">${player.playerDetails.position.match(/\((.*?)\)/)[1]} ${statusText}</p>
+                                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full ${statusBadgeColor} mt-2">${player.isFreeAgent ? 'Free Agent' : 'Active Contract'}</span>
                             </div>
-                            <div class="mt-4 md:mt-0">
-                                <button onclick="window.app.openViewProfileModal('${player.id}')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-md text-sm">View Profile</button>
+                            <div class="flex space-x-2 mt-4 md:mt-0">
+                                <button onclick="window.app.openReportModal('${player.id}')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-3 rounded-md text-sm">View Profile</button>
+                                <button onclick="window.app.openProfileModal('${player.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button>
+                                <button onclick="window.app.openDeleteModal('profile', '${player.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button>
                             </div>
                         </div>`;
                     }).join('')}</div>`;
@@ -242,28 +188,31 @@
             },
 
             getClubRequestsHTML() {
-                let requestsHTML = `<div class="flex justify-between items-center mb-6"><h2 class="text-2xl font-bold">Club Requests</h2><button onclick="window.app.openAllClubRequestsReportModal()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Generate Full Report</button></div>`;
-                if (localDB.clubRequests.length === 0) {
-                    requestsHTML += `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No club requests yet. Add one using the "Add New" button.</div>`;
-                    return requestsHTML;
-                }
-                requestsHTML += localDB.clubRequests.map(req => `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center mb-4"><div><p class="text-lg font-bold">${req.clubName} <span class="text-sm text-gray-500 font-normal">- ${req.country}</span></p><div class="flex flex-wrap gap-2 mt-2">${(req.positions || []).map(p => `<span class="bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded-full">${p}</span>`).join('')}</div><p class="text-sm text-gray-600 mt-2">Salary Range: <span class="font-semibold">${req.salaryRange}</span></p><p class="text-xs text-gray-500 mt-1">${req.notes || ''}</p></div><div class="flex items-center space-x-2"><button onclick="window.app.openClubRequestReportModal('${req.id}')" class="text-gray-500 hover:text-gray-700 p-2" title="Share Request"><i class="fas fa-share-alt fa-lg"></i></button><button onclick="window.app.openClubRequestModal('${req.id}')" class="text-blue-500 hover:text-blue-700 p-2" title="Edit Request"><i class="fas fa-edit fa-lg"></i></button><button onclick="window.app.openDeleteModal('request', '${req.id}')" class="text-red-500 hover:text-red-700 p-2" title="Delete Request"><i class="fas fa-trash-alt fa-lg"></i></button></div></div>`).join('');
+                let requestsHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">Club Requests</h2><button onclick="window.app.openAllClubRequestsReportModal()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Generate Full Report</button></div>`;
+                if (localDB.clubRequests.length === 0) { requestsHTML += `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No club requests yet.</div>`; return requestsHTML; }
+                requestsHTML += localDB.clubRequests.map(req => `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center mb-4"><div><p class="text-lg font-bold">${req.clubName} <span class="text-sm text-gray-500 font-normal">- ${req.country}</span></p><div class="flex flex-wrap gap-2 mt-2">${req.positions.map(p => `<span class="bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded-full">${p}</span>`).join('')}</div><p class="text-sm text-gray-600 mt-2">Salary Range: <span class="font-semibold">${req.salaryRange}</span></p><p class="text-xs text-gray-500 mt-1">${req.notes || ''}</p></div><div class="flex space-x-2"><button onclick="window.app.openClubRequestReportModal('${req.id}')" class="text-gray-500 hover:text-gray-700 p-2"><i class="fas fa-share-alt fa-lg"></i></button><button onclick="window.app.openClubRequestModal('${req.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button><button onclick="window.app.openDeleteModal('request', '${req.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button></div></div>`).join('');
                 return requestsHTML;
             },
 
             getContactsHTML() {
-                const contacts = localDB.profiles.filter(p => p && p.profileType !== 'Player');
-                if (contacts.length === 0) return `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No contacts found. Add one using the "Add New" button.</div>`;
-                
+                const contacts = localDB.profiles.filter(p => p.profileType !== 'Player');
+                contacts.sort((a, b) => a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName));
+                if (contacts.length === 0) return `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No contacts yet.</div>`;
                 return contacts.map(contact => {
-                    const statusText = contact.isWithoutClub ? 'Without a club' : `at ${contact.club || 'Unknown Club'}`;
+                    const statusText = contact.isWithoutClub ? 'Without a club' : `at ${contact.club}`;
                     return `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center mb-4">
                         <div>
-                            <p class="text-lg font-bold">${contact.firstName || ''} ${contact.lastName || ''} <span class="text-sm text-blue-500 font-semibold">${contact.profileType || ''}</span></p>
+                            <p class="text-lg font-bold">${contact.firstName} ${contact.lastName} <span class="text-sm text-blue-500 font-semibold">${contact.profileType}</span></p>
                             <p class="text-gray-600">${statusText}</p>
+                            <div class="text-sm text-gray-500 mt-2">
+                                <p><i class="fas fa-phone mr-2"></i>${contact.contact?.phone || 'N/A'}</p>
+                                <p><i class="fas fa-link mr-2"></i>${contact.contact?.comment || 'N/A'}</p>
+                            </div>
                         </div>
-                        <div class="mt-4 md:mt-0">
-                           <button onclick="window.app.openViewProfileModal('${contact.id}')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-md text-sm">View Profile</button>
+                        <div class="flex space-x-2">
+                             <button onclick="window.app.openReportModal('${contact.id}')" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-3 rounded-md text-sm">View Profile</button>
+                             <button onclick="window.app.openProfileModal('${contact.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button>
+                             <button onclick="window.app.openDeleteModal('profile', '${contact.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button>
                         </div>
                     </div>`;
                 }).join('');
@@ -271,132 +220,75 @@
 
             getSettingsHTML() {
                 const isPasswordSet = localDB.settings.password && localDB.settings.password.length > 0;
-                let passwordFormHTML = isPasswordSet ? `
-                    <h3 class="text-xl font-semibold mb-4">Change or Remove Password</h3>
-                    <div class="mb-4"><label for="current-password" class="block text-sm font-medium text-gray-700">Current Password</label><input type="password" id="current-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required></div>
-                    <div class="mb-4"><label for="new-password" class="block text-sm font-medium text-gray-700">New Password (leave blank to remove)</label><input type="password" id="new-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div>
-                    <div class="mb-6"><label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm New Password</label><input type="password" id="confirm-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div>
-                ` : `
-                    <h3 class="text-xl font-semibold mb-4">Set a New Password</h3>
-                    <p class="text-sm text-gray-600 mb-4">Protect your data by requiring a password for all save and delete actions.</p>
-                    <div class="mb-4"><label for="new-password" class="block text-sm font-medium text-gray-700">New Password</label><input type="password" id="new-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required></div>
-                    <div class="mb-6"><label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm New Password</label><input type="password" id="confirm-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required></div>
-                `;
+                let formHTML = '';
+                if (isPasswordSet) {
+                    formHTML = `
+                        <h3 class="text-xl font-semibold mb-4">Change or Remove Password</h3>
+                        <div class="mb-4">
+                            <label for="current-password" class="block text-sm font-medium text-gray-700">Current Password</label>
+                            <input type="password" id="current-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="mb-4">
+                            <label for="new-password" class="block text-sm font-medium text-gray-700">New Password (leave blank to remove)</label>
+                            <input type="password" id="new-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="mb-6">
+                            <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                            <input type="password" id="confirm-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                    `;
+                } else {
+                    formHTML = `
+                        <h3 class="text-xl font-semibold mb-4">Set a New Password</h3>
+                        <p class="text-sm text-gray-600 mb-4">Protect your data by requiring a password for all save and delete actions.</p>
+                        <div class="mb-4">
+                            <label for="new-password" class="block text-sm font-medium text-gray-700">New Password</label>
+                            <input type="password" id="new-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="mb-6">
+                            <label for="confirm-password" class="block text-sm font-medium text-gray-700">Confirm New Password</label>
+                            <input type="password" id="confirm-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                    `;
+                }
 
                 return `
-                    <div class="space-y-8">
-                        <div class="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">
-                            <h2 class="text-2xl font-bold mb-6">Security Settings</h2>
-                            <form onsubmit="event.preventDefault(); window.app.handlePasswordSave();">
-                                ${passwordFormHTML}
-                                <div id="settings-error" class="text-red-500 text-sm mb-4 hidden"></div>
-                                <div class="flex justify-end"><button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Save Settings</button></div>
-                                <div id="settings-status" class="mt-4 text-green-600 text-sm"></div>
-                            </form>
-                        </div>
-                        <div class="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">
-                            <h2 class="text-2xl font-bold mb-6">Data Management</h2>
-                            <div class="border-l-4 border-red-500 p-4 bg-red-50 rounded-r-lg">
-                                <h3 class="text-lg font-semibold text-red-800">Danger Zone</h3>
-                                <p class="text-red-700 mt-2">This action is irreversible. It will permanently delete all player and contact profiles from the database.</p>
-                                <div class="mt-4"><button onclick="window.app.openClearAllProfilesConfirmationModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Clear All Profiles</button></div>
+                    <div class="bg-white p-6 rounded-lg shadow-md max-w-lg mx-auto">
+                        <h2 class="text-2xl font-bold mb-6">Security Settings</h2>
+                        <form onsubmit="event.preventDefault(); window.app.handlePasswordSave();">
+                            ${formHTML}
+                            <div id="settings-error" class="text-red-500 text-sm mb-4 hidden"></div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Save Settings</button>
                             </div>
-                        </div>
+                            <div id="settings-status" class="mt-4 text-green-600 text-sm"></div>
+                        </form>
                     </div>
                 `;
             },
             
-            async addReminder() { 
-                const input = document.getElementById('new-reminder-input');
-                if (input.value.trim()) {
-                    try {
-                        await addDoc(collection(db, "reminders"), { text: input.value.trim(), isCompleted: false, createdAt: serverTimestamp() });
-                        input.value = '';
-                    } catch (e) { handleFirestoreError(e); }
-                }
-            },
-            async toggleReminder(id) { 
-                const reminder = localDB.reminders.find(r => r.id === id); 
-                if (reminder) {
-                    try {
-                        await updateDoc(doc(db, "reminders", id), { isCompleted: !reminder.isCompleted });
-                    } catch(e) { handleFirestoreError(e); }
-                }
-            },
-            async saveIntroMessage() { 
-                const message = document.getElementById('intro-message').value;
-                try {
-                    await setDoc(doc(db, "settings", "main"), { introMessage: message }, { merge: true });
-                    alert('Intro message saved!');
-                } catch(e) { handleFirestoreError(e); }
-            },
-            shareIntroMessage() { 
-                const message = encodeURIComponent(localDB.settings.introMessage); 
-                window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
-            },
+            async addReminder() { const input = document.getElementById('new-reminder-input'); if (input.value.trim()) { await addDoc(collection(db, "reminders"), { text: input.value.trim(), isCompleted: false, createdAt: serverTimestamp() }); input.value = ''; } },
+            async toggleReminder(id) { const reminder = localDB.reminders.find(r => r.id === id); await updateDoc(doc(db, "reminders", id), { isCompleted: !reminder.isCompleted }); },
+            async saveIntroMessage() { const message = document.getElementById('intro-message').value; await setDoc(doc(db, "settings", "introMessage"), { text: message }); alert('Intro message saved!'); },
+            shareIntroMessage() { const message = encodeURIComponent(localDB.settings.introMessage); window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank'); },
             
             async executeSaveProfile(id) {
-                const isEditing = !!id;
+                const isEditing = id !== 'null';
                 const profileType = document.getElementById('profileType').value;
                 const isPlayer = profileType === 'Player';
-
-                const newProfileData = {
-                    profileType,
-                    firstName: document.getElementById('firstName').value.trim(),
-                    lastName: document.getElementById('lastName').value.trim(),
-                    club: document.getElementById('club').value.trim(),
-                    isFreeAgent: isPlayer ? document.getElementById('isFreeAgent').checked : false,
-                    isWithoutClub: !isPlayer ? document.getElementById('isWithoutClub').checked : false,
-                };
-                
-                if (isPlayer) {
-                    newProfileData.playerDetails = {
-                        position: document.getElementById('position').value,
-                        salaryRequest: document.getElementById('salaryRequest').value,
-                        contractEndDate: document.getElementById('contractEndDate').value,
-                        isHighlighted: document.getElementById('isHighlighted').checked,
-                        videoLink: document.getElementById('videoLink').value.trim(),
-                        cvLink: document.getElementById('cvLink').value.trim(),
-                    };
-                } else {
-                     newProfileData.contact = {
-                        phone: document.getElementById('contactPhone').value.trim(),
-                        comment: document.getElementById('contactComment').value.trim(),
-                    };
-                }
-                
-                try {
-                    if (isEditing) {
-                        await setDoc(doc(db, "profiles", id), newProfileData, { merge: true });
-                    } else {
-                        newProfileData.createdAt = serverTimestamp();
-                        await addDoc(collection(db, "profiles"), newProfileData);
-                    }
-                    this.closeModal();
-                } catch(e) { handleFirestoreError(e); }
+                const newProfileData = { profileType, firstName: document.getElementById('firstName').value, lastName: document.getElementById('lastName').value, club: document.getElementById('club').value, isFreeAgent: isPlayer ? document.getElementById('isFreeAgent').checked : false, isWithoutClub: !isPlayer ? document.getElementById('isFreeAgent').checked : false, };
+                if (isPlayer) { newProfileData.playerDetails = { position: document.getElementById('position').value, salaryRequest: document.getElementById('salaryRequest').value, contractEndDate: document.getElementById('contractEndDate').value, isHighlighted: document.getElementById('isHighlighted').checked, videoLink: document.getElementById('videoLink').value, cvLink: document.getElementById('cvLink').value, } } 
+                else { const existingProfile = isEditing ? localDB.profiles.find(p => p.id === id) : {}; newProfileData.contact = existingProfile.contact || { phone: '', comment: '' }; }
+                if (isEditing) { await setDoc(doc(db, "profiles", id), newProfileData); } else { await addDoc(collection(db, "profiles"), newProfileData); }
+                this.closeModal();
             },
 
             async executeSaveClubRequest(id) {
-                const isEditing = !!id;
+                const isEditing = id !== 'null';
                 const selectedPositions = Array.from(document.getElementById('reqPositions').selectedOptions).map(option => option.value);
-                
-                const newRequestData = {
-                    clubName: document.getElementById('clubName').value.trim(),
-                    country: document.getElementById('country').value.trim(),
-                    positions: selectedPositions,
-                    salaryRange: document.getElementById('reqSalary').value,
-                    notes: document.getElementById('reqNotes').value.trim()
-                };
-
-                try {
-                    if (isEditing) {
-                        await updateDoc(doc(db, "clubRequests", id), newRequestData);
-                    } else {
-                        newRequestData.createdAt = serverTimestamp();
-                        await addDoc(collection(db, "clubRequests"), newRequestData);
-                    }
-                    this.closeModal();
-                } catch(e) { handleFirestoreError(e); }
+                const newRequestData = { clubName: document.getElementById('clubName').value, country: document.getElementById('country').value, positions: selectedPositions, salaryRange: document.getElementById('reqSalary').value, notes: document.getElementById('reqNotes').value };
+                if (isEditing) { await updateDoc(doc(db, "clubRequests", id), newRequestData); } else { newRequestData.createdAt = serverTimestamp(); await addDoc(collection(db, "clubRequests"), newRequestData); }
+                this.closeModal();
             },
 
             async handlePasswordSave() {
@@ -417,20 +309,28 @@
                         errorDiv.classList.remove('hidden');
                         return;
                     }
+                    if (newPasswordInput.value !== confirmPasswordInput.value) {
+                        errorDiv.textContent = 'New passwords do not match.';
+                        errorDiv.classList.remove('hidden');
+                        return;
+                    }
+                } else {
+                    if (!newPasswordInput.value) {
+                        errorDiv.textContent = 'New password cannot be empty.';
+                        errorDiv.classList.remove('hidden');
+                        return;
+                    }
+                    if (newPasswordInput.value !== confirmPasswordInput.value) {
+                        errorDiv.textContent = 'Passwords do not match.';
+                        errorDiv.classList.remove('hidden');
+                        return;
+                    }
                 }
-                if (newPasswordInput.value !== confirmPasswordInput.value) {
-                    errorDiv.textContent = 'New passwords do not match.';
-                    errorDiv.classList.remove('hidden');
-                    return;
-                }
-                
+
                 try {
-                    await setDoc(doc(db, "settings", "main"), { password: newPasswordInput.value }, { merge: true });
+                    await setDoc(doc(db, "settings", "security"), { confirmationPassword: newPasswordInput.value });
                     statusDiv.textContent = "Password updated successfully!";
-                    setTimeout(() => {
-                        this.showTab('settings');
-                        statusDiv.textContent = '';
-                    }, 2000);
+                    setTimeout(() => this.showTab('settings'), 2000);
                 } catch (error) {
                     errorDiv.textContent = "Error saving password.";
                     errorDiv.classList.remove('hidden');
@@ -439,7 +339,7 @@
             },
 
             closeModal() { document.getElementById('modal-container').innerHTML = ''; },
-            openAddChoiceModal() { document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-sm p-6"><h3 class="text-xl font-bold text-center mb-6">What would you like to add?</h3><div class="space-y-3"><button onclick="window.app.openProfileModal()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">New Player / Contact</button><button onclick="window.app.openClubRequestModal()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg">New Club Request</button><button onclick="window.app.closeModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg mt-4">Cancel</button></div></div>`; },
+            openAddChoiceModal() { document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-sm p-6"><h3 class="text-xl font-bold text-center mb-6">What to add?</h3><div class="space-y-3"><button onclick="window.app.openProfileModal()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">New Player / Contact</button><button onclick="window.app.openClubRequestModal()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg">New Club Request</button><button onclick="window.app.closeModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg mt-4">Cancel</button></div></div>`; },
             
             openDeleteModal(type, id) {
                 document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-sm p-6 text-center"><i class="fas fa-exclamation-triangle text-5xl text-red-400 mb-4"></i><h3 class="text-xl font-bold mb-2">Are you sure?</h3><p class="text-gray-600 mb-6">This action cannot be undone.</p><div class="flex justify-center space-x-4"><button onclick="window.app.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg">Cancel</button><button onclick="window.app.requestDeleteConfirmation('${type}', '${id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Delete</button></div></div>`;
@@ -455,22 +355,20 @@
             },
 
             async executeDeleteItem(type, id) {
-                try {
-                    if (type === 'profile') await deleteDoc(doc(db, "profiles", id));
-                    else if (type === 'request') await deleteDoc(doc(db, "clubRequests", id));
-                    else if (type === 'reminder') await deleteDoc(doc(db, "reminders", id));
-                    this.closeModal();
-                } catch(e) { handleFirestoreError(e); }
+                if (type === 'profile') await deleteDoc(doc(db, "profiles", id));
+                else if (type === 'request') await deleteDoc(doc(db, "clubRequests", id));
+                else if (type === 'reminder') await deleteDoc(doc(db, "reminders", id));
+                this.closeModal();
             },
 
             requestSaveConfirmation(type, id) {
                 const password = localDB.settings.password;
-                const callback = type === 'profile' ? () => this.executeSaveProfile(id) : () => this.executeSaveClubRequest(id);
-                
                 if (password && password.length > 0) {
-                    this.openConfirmationModal(callback);
+                    if (type === 'profile') { this.openConfirmationModal(() => this.executeSaveProfile(id)); } 
+                    else if (type === 'request') { this.openConfirmationModal(() => this.executeSaveClubRequest(id)); }
                 } else {
-                    callback();
+                    if (type === 'profile') { this.executeSaveProfile(id); } 
+                    else if (type === 'request') { this.executeSaveClubRequest(id); }
                 }
             },
 
@@ -489,118 +387,61 @@
                 };
             },
 
-            copyReport() { 
-                const textarea = document.getElementById('report-text-area'); 
-                textarea.select(); 
-                document.execCommand('copy'); 
-                alert('Report copied to clipboard!'); 
-            },
-
-            openViewProfileModal(id) {
-                const profile = localDB.profiles.find(p => p.id === id);
-                if (!profile) return;
-                
-                let detailsHTML = '';
-                if (profile.profileType === 'Player' && profile.playerDetails) {
-                    detailsHTML = `
-                        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                            <div class="font-semibold text-gray-500">Position</div><div>${profile.playerDetails.position || 'N/A'}</div>
-                            <div class="font-semibold text-gray-500">Status</div><div>${profile.isFreeAgent ? 'Free Agent' : `At ${profile.club || 'N/A'}`}</div>
-                            <div class="font-semibold text-gray-500">Contract End</div><div>${profile.playerDetails.contractEndDate || 'N/A'}</div>
-                            <div class="font-semibold text-gray-500">Salary Request</div><div>${profile.playerDetails.salaryRequest || 'N/A'}</div>
-                            <div class="font-semibold text-gray-500">Video</div><div><a href="${profile.playerDetails.videoLink}" target="_blank" class="text-blue-500 hover:underline">${profile.playerDetails.videoLink ? 'View Link' : 'N/A'}</a></div>
-                            <div class="font-semibold text-gray-500">CV</div><div><a href="${profile.playerDetails.cvLink}" target="_blank" class="text-blue-500 hover:underline">${profile.playerDetails.cvLink ? 'View Link' : 'N/A'}</a></div>
-                        </div>
-                    `;
-                } else {
-                     detailsHTML = `
-                        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                            <div class="font-semibold text-gray-500">Role</div><div>${profile.profileType || 'N/A'}</div>
-                            <div class="font-semibold text-gray-500">Status</div><div>${profile.isWithoutClub ? 'Without a club' : `At ${profile.club || 'N/A'}`}</div>
-                            <div class="font-semibold text-gray-500">Phone</div><div>${profile.contact?.phone || 'N/A'}</div>
-                            <div class="font-semibold text-gray-500">Comment</div><div>${profile.contact?.comment || 'N/A'}</div>
-                        </div>
-                    `;
-                }
-
-                const modalHTML = `
-                    <div class="modal-backdrop" onclick="window.app.closeModal()"></div>
-                    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg">
-                        <div class="p-6">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h3 class="text-2xl font-bold">${profile.firstName} ${profile.lastName}</h3>
-                                    <p class="text-gray-600">${profile.profileType}</p>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    ${profile.profileType === 'Player' ? `<button onclick="window.app.openReportModal('${id}')" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-3 rounded-lg text-sm">Share</button>` : ''}
-                                    <button onclick="window.app.openProfileModal('${id}')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-lg text-sm">Edit</button>
-                                    <button onclick="window.app.openDeleteModal('profile', '${id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 rounded-lg text-sm">Delete</button>
-                                </div>
-                            </div>
-                            <div class="mt-6 pt-4 border-t">
-                                ${detailsHTML}
-                            </div>
-                        </div>
-                    </div>
-                `;
-                document.getElementById('modal-container').innerHTML = modalHTML;
-            },
+            copyReport() { const textarea = document.getElementById('report-text-area'); textarea.select(); document.execCommand('copy'); alert('Report copied to clipboard!'); },
 
             openProfileModal(id = null) {
-                const isEditing = !!id;
+                const isEditing = id !== null;
                 const profile = isEditing ? localDB.profiles.find(p => p.id === id) : {};
                 const title = isEditing ? `Edit ${profile.firstName} ${profile.lastName}` : 'Add New Person';
-                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop"></div><div class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-full overflow-y-auto"><form onsubmit="event.preventDefault(); window.app.requestSaveConfirmation('profile', '${id || ''}');" class="p-6 space-y-4"><h3 class="text-2xl font-bold mb-4">${title}</h3><div id="form-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div><div id="player-details-section" class="hidden pt-4 border-t"><h4 class="text-lg font-semibold mb-2">Player Details</h4><div id="player-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div><div id="contact-details-section" class="hidden pt-4 border-t"><h4 class="text-lg font-semibold mb-2">Contact Details</h4><div id="contact-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div><div class="flex justify-end space-x-3 pt-6 border-t mt-4"><button type="button" onclick="window.app.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Save</button></div></form></div></div>`;
+                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop"></div><div class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-full overflow-y-auto"><form onsubmit="event.preventDefault(); window.app.requestSaveConfirmation('profile', '${id}');" class="p-6 space-y-4"><h3 class="text-2xl font-bold mb-4">${title}</h3><div id="form-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div><div id="player-details-section" class="hidden pt-4 border-t"><h4 class="text-lg font-semibold mb-2">Player Details</h4><div id="player-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div><div class="flex justify-end space-x-3 pt-4 border-t"><button type="button" onclick="window.app.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Save</button></div></form></div></div>`;
                 this.populateProfileForm(profile);
             },
 
             populateProfileForm(profile) {
                 const formContainer = document.getElementById('form-fields-container');
-                const playerFieldsContainer = document.getElementById('player-fields-container');
-                const contactFieldsContainer = document.getElementById('contact-fields-container');
-                
-                formContainer.innerHTML = `<div><label class="block text-sm font-medium text-gray-700">Profile Type</label><select id="profileType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" onchange="window.app.toggleProfileSections(this.value)">${PROFILE_TYPES.map(type => `<option value="${type}" ${profile?.profileType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></div><div></div><div><label class="block text-sm font-medium">First Name*</label><input type="text" id="firstName" value="${profile?.firstName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Last Name*</label><input type="text" id="lastName" value="${profile?.lastName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Club</label><input type="text" id="club" value="${profile?.club || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div class="flex items-end pb-1"><label id="player-checkbox-label" class="flex items-center"><input type="checkbox" id="isFreeAgent" ${profile?.isFreeAgent ? 'checked' : ''} class="rounded border-gray-300 text-red-600 shadow-sm"><span class="ml-2 text-sm text-gray-600">Or check if Free Agent</span></label><label id="contact-checkbox-label" class="flex items-center hidden"><input type="checkbox" id="isWithoutClub" ${profile?.isWithoutClub ? 'checked' : ''} class="rounded border-gray-300 text-red-600 shadow-sm"><span class="ml-2 text-sm text-gray-600">Or check if Without a Club</span></label></div>`;
-                
-                playerFieldsContainer.innerHTML = `<div><label class="block text-sm font-medium">Position*</label><select id="position" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${POSITIONS.map(pos => `<option value="${pos}" ${profile?.playerDetails?.position === pos ? 'selected' : ''}>${pos}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Salary Request*</label><select id="salaryRequest" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${SALARY_RANGES.map(range => `<option value="${range}" ${profile?.playerDetails?.salaryRequest === range ? 'selected' : ''}>${range}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Contract End Date</label><input type="date" id="contractEndDate" value="${profile?.playerDetails?.contractEndDate || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div class="flex items-end pb-1"><label class="flex items-center"><input type="checkbox" id="isHighlighted" ${profile?.playerDetails?.isHighlighted ? 'checked' : ''} class="rounded border-gray-300 text-red-600 shadow-sm"><span class="ml-2 text-sm text-gray-600">Highlight Player</span></label></div><div class="md:col-span-2"><label class="block text-sm font-medium">Video Link (YouTube)</label><input type="url" id="videoLink" value="${profile?.playerDetails?.videoLink || ''}" placeholder="https://..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div class="md:col-span-2"><label class="block text-sm font-medium">CV Link (e.g., Transfermarkt)</label><input type="url" id="cvLink" value="${profile?.playerDetails?.cvLink || ''}" placeholder="https://..." class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div>`;
-                
-                contactFieldsContainer.innerHTML = `<div><label class="block text-sm font-medium">Phone</label><input type="tel" id="contactPhone" value="${profile?.contact?.phone || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div class="md:col-span-2"><label class="block text-sm font-medium">Comment / Link</label><textarea id="contactComment" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${profile?.contact?.comment || ''}</textarea></div>`;
-
-                this.toggleProfileSections(document.getElementById('profileType').value);
+                const playerDetailsContainer = document.getElementById('player-fields-container');
+                const isPlayer = (profile?.profileType === 'Player') || !profile?.profileType;
+                formContainer.innerHTML = `<div><label class="block text-sm font-medium text-gray-700">Profile Type</label><select id="profileType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" onchange="window.app.togglePlayerDetails(this.value)">${PROFILE_TYPES.map(type => `<option value="${type}" ${profile?.profileType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></div><div></div><div><label class="block text-sm font-medium">First Name*</label><input type="text" id="firstName" value="${profile?.firstName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Last Name*</label><input type="text" id="lastName" value="${profile?.lastName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Club*</label><input type="text" id="club" value="${profile?.club || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div class="flex items-end pb-1"><label class="flex items-center"><input type="checkbox" id="isFreeAgent" ${profile?.isFreeAgent || profile?.isWithoutClub ? 'checked' : ''} class="rounded border-gray-300 text-red-600 shadow-sm"><span id="checkbox-label" class="ml-2 text-sm text-gray-600">${isPlayer ? 'Or check if Free Agent' : 'Or check if Without a Club'}</span></label></div>`;
+                playerDetailsContainer.innerHTML = `<div><label class="block text-sm font-medium">Position*</label><select id="position" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${POSITIONS.map(pos => `<option value="${pos}" ${profile?.playerDetails?.position === pos ? 'selected' : ''}>${pos}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Salary Request*</label><select id="salaryRequest" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${SALARY_RANGES.map(range => `<option value="${range}" ${profile?.playerDetails?.salaryRequest === range ? 'selected' : ''}>${range}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Contract End Date</label><input type="date" id="contractEndDate" value="${profile?.playerDetails?.contractEndDate || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div class="flex items-end pb-1"><label class="flex items-center"><input type="checkbox" id="isHighlighted" ${profile?.playerDetails?.isHighlighted ? 'checked' : ''} class="rounded border-gray-300 text-red-600 shadow-sm"><span class="ml-2 text-sm text-gray-600">Highlight Player</span></label></div><div class="md:col-span-2"><label class="block text-sm font-medium">Video Link (YouTube)</label><input type="url" id="videoLink" value="${profile?.playerDetails?.videoLink || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div class="md:col-span-2"><label class="block text-sm font-medium">CV Link (e.g., TM)</label><input type="url" id="cvLink" value="${profile?.playerDetails?.cvLink || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div>`;
+                this.togglePlayerDetails(document.getElementById('profileType').value);
             },
 
-            toggleProfileSections(profileType) {
-                const isPlayer = profileType === 'Player';
-                document.getElementById('player-details-section').classList.toggle('hidden', !isPlayer);
-                document.getElementById('contact-details-section').classList.toggle('hidden', isPlayer);
-                document.getElementById('player-checkbox-label').classList.toggle('hidden', !isPlayer);
-                document.getElementById('contact-checkbox-label').classList.toggle('hidden', isPlayer);
+            togglePlayerDetails(profileType) {
+                const playerSection = document.getElementById('player-details-section');
+                const checkboxLabel = document.getElementById('checkbox-label');
+                if (profileType === 'Player') { playerSection.classList.remove('hidden'); checkboxLabel.textContent = 'Or check if Free Agent'; } 
+                else { playerSection.classList.add('hidden'); checkboxLabel.textContent = 'Or check if Without a Club'; }
             },
             
             openClubRequestModal(id = null) {
-                const isEditing = !!id;
+                const isEditing = id !== null;
                 const request = isEditing ? localDB.clubRequests.find(r => r.id === id) : {};
                 const title = isEditing ? `Edit Request from ${request.clubName}` : 'Add New Club Request';
-                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop"></div><div class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg"><form onsubmit="event.preventDefault(); window.app.requestSaveConfirmation('request', '${id || ''}');" class="p-6 space-y-4"><h3 class="text-2xl font-bold mb-4">${title}</h3><div><label class="block text-sm font-medium">Club Name*</label><input type="text" id="clubName" value="${request?.clubName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Country*</label><input type="text" id="country" value="${request?.country || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Positions (select multiple)*</label><select id="reqPositions" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-40" required>${POSITIONS.map(pos => `<option value="${pos}" ${request?.positions?.includes(pos) ? 'selected' : ''}>${pos}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Salary Range*</label><select id="reqSalary" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>${SALARY_RANGES.map(range => `<option value="${range}" ${request?.salaryRange === range ? 'selected' : ''}>${range}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Notes</label><textarea id="reqNotes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${request?.notes || ''}</textarea></div><div class="flex justify-end space-x-3 pt-4 border-t"><button type="button" onclick="window.app.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Save</button></div></form></div></div>`;
+                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop"></div><div class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg"><form onsubmit="event.preventDefault(); window.app.requestSaveConfirmation('request', '${id}');" class="p-6 space-y-4"><h3 class="text-2xl font-bold mb-4">${title}</h3><div><label class="block text-sm font-medium">Club Name*</label><input type="text" id="clubName" value="${request?.clubName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Country*</label><input type="text" id="country" value="${request?.country || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Positions (select multiple)*</label><select id="reqPositions" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-40">${POSITIONS.map(pos => `<option value="${pos}" ${request?.positions?.includes(pos) ? 'selected' : ''}>${pos}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Salary Range*</label><select id="reqSalary" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${SALARY_RANGES.map(range => `<option value="${range}" ${request?.salaryRange === range ? 'selected' : ''}>${range}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Notes</label><textarea id="reqNotes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${request?.notes || ''}</textarea></div><div class="flex justify-end space-x-3 pt-4 border-t"><button type="button" onclick="window.app.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Save</button></div></form></div></div>`;
             },
-            
+
             openReportModal(playerId) {
                 const profile = localDB.profiles.find(p => p.id === playerId);
-                if (!profile || profile.profileType !== 'Player' || !profile.playerDetails) return;
+                if (!profile) return;
 
-                let reportText = `PLAYER REPORT\n\nName: ${profile.firstName} ${profile.lastName}\nPosition: ${profile.playerDetails.position}\nStatus: ${profile.isFreeAgent ? 'Free Agent' : 'Under contract at ' + profile.club}\n\nDescription: A talented ${profile.playerDetails.position.toLowerCase()} known for their vision and technical ability.\n\nVideo: ${profile.playerDetails.videoLink || 'N/A'}\nCV: ${profile.playerDetails.cvLink || 'N/A'}`;
-                const subject = encodeURIComponent(`Player Report: ${profile.firstName} ${profile.lastName}`);
+                let reportText = `PROFILE REPORT\n\nName: ${profile.firstName} ${profile.lastName}\nStatus: ${profile.isWithoutClub ? 'Without a club' : 'at ' + profile.club}`;
+                if (profile.profileType === 'Player' && profile.playerDetails) {
+                     reportText = `PLAYER REPORT\n\nName: ${profile.firstName} ${profile.lastName}\nPosition: ${profile.playerDetails.position}\nStatus: ${profile.isFreeAgent ? 'Free Agent' : 'Under contract at ' + profile.club}\n\nDescription: A talented ${profile.playerDetails.position} known for their vision and technical ability.\n\nVideo: ${profile.playerDetails.videoLink}\nCV: ${profile.playerDetails.cvLink}`;
+                }
+                const subject = encodeURIComponent(`Profile Report: ${profile.firstName} ${profile.lastName}`);
                 const body = encodeURIComponent(reportText.trim());
-                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg p-6"><h3 class="text-xl font-bold mb-4">Share Report for ${profile.firstName}</h3><textarea id="report-text-area" readonly class="w-full h-64 bg-gray-100 p-3 rounded-md border font-mono text-sm">${reportText.trim()}</textarea><div class="flex flex-wrap justify-end gap-2 mt-4"><button onclick="window.app.copyReport()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Copy Report</button><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(reportText.trim())}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Share via WhatsApp</a><a href="mailto:?subject=${subject}&body=${body}" target="_blank" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Share via Email</a></div></div>`;
+                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg p-6"><h3 class="text-xl font-bold mb-4">Report for ${profile.firstName} ${profile.lastName}</h3><textarea id="report-text-area" readonly class="w-full h-64 bg-gray-100 p-3 rounded-md border font-mono text-sm">${reportText.trim()}</textarea><div class="flex flex-wrap justify-end gap-2 mt-4"><button onclick="window.app.copyReport()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Copy Report</button><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(reportText.trim())}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Share via WhatsApp</a><a href="mailto:?subject=${subject}&body=${body}" target="_blank" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Share via Email</a></div></div>`;
             },
+            
             openClubRequestReportModal(requestId) {
                 const request = localDB.clubRequests.find(r => r.id === requestId);
                 if (!request) return;
-                const reportText = `CLUB REQUEST\n\nClub: ${request.clubName} (${request.country})\nPositions Needed: ${(request.positions || []).join(', ')}\nSalary Range: ${request.salaryRange}\n\nNotes: ${request.notes || 'N/A'}`;
+                const reportText = `CLUB REQUEST\n\nClub: ${request.clubName} (${request.country})\nPositions Needed: ${request.positions.join(', ')}\nSalary Range: ${request.salaryRange}\n\nNotes: ${request.notes || 'N/A'}`;
                 const subject = encodeURIComponent(`Club Request: ${request.clubName}`);
                 const body = encodeURIComponent(reportText.trim());
                 document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg p-6"><h3 class="text-xl font-bold mb-4">Report for ${request.clubName}</h3><textarea id="report-text-area" readonly class="w-full h-64 bg-gray-100 p-3 rounded-md border font-mono text-sm">${reportText.trim()}</textarea><div class="flex flex-wrap justify-end gap-2 mt-4"><button onclick="window.app.copyReport()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Copy Report</button><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(reportText.trim())}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Share via WhatsApp</a><a href="mailto:?subject=${subject}&body=${body}" target="_blank" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Share via Email</a></div></div>`;
             },
+
             openAllClubRequestsReportModal() {
                 if (localDB.clubRequests.length === 0) {
                     alert("No club requests to report.");
@@ -610,73 +451,27 @@
                 localDB.clubRequests.forEach(req => {
                     reportText += `----------------------------------------\n`;
                     reportText += `Club: ${req.clubName} (${req.country})\n`;
-                    reportText += `Positions: ${(req.positions || []).join(', ')}\n`;
+                    reportText += `Positions: ${req.positions.join(', ')}\n`;
                     reportText += `Salary: ${req.salaryRange}\n`;
-                    reportText += `Notes: ${req.notes || 'N/A'}\n\n`;
+                    reportText += `Notes: ${req.notes || 'N/A'}\n`;
                 });
                 const subject = encodeURIComponent(`All Active Club Requests`);
                 const body = encodeURIComponent(reportText.trim());
                 document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg p-6"><h3 class="text-xl font-bold mb-4">Full Club Requests Report</h3><textarea id="report-text-area" readonly class="w-full h-64 bg-gray-100 p-3 rounded-md border font-mono text-sm">${reportText.trim()}</textarea><div class="flex flex-wrap justify-end gap-2 mt-4"><button onclick="window.app.copyReport()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Copy Report</button><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(reportText.trim())}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Share via WhatsApp</a><a href="mailto:?subject=${subject}&body=${body}" target="_blank" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Share via Email</a></div></div>`;
-            },
-            
-            openClearAllProfilesConfirmationModal() {
-                const passwordProtected = localDB.settings.password && localDB.settings.password.length > 0;
-                const modalHTML = `
-                    <div class="modal-backdrop" onclick="window.app.closeModal()"></div>
-                    <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-md p-6">
-                        <h3 class="text-xl font-bold text-red-600 mb-4">Confirm Permanent Deletion</h3>
-                        <p class="text-gray-600 mb-4">This will delete all <strong>${localDB.profiles.length}</strong> profiles. This action cannot be undone. Please type "DELETE" to confirm.</p>
-                        <input type="text" id="delete-confirm-input" placeholder='Type "DELETE" here' class="w-full border border-gray-300 rounded-md p-2 mb-4">
-                        ${passwordProtected ? `<input type="password" id="password-input" placeholder="Enter password" class="w-full border border-gray-300 rounded-md p-2 mb-4">` : ''}
-                        <div id="delete-error" class="text-red-500 text-sm mb-4 hidden"></div>
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" onclick="window.app.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button>
-                            <button type="button" id="confirm-clear-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg">Confirm Deletion</button>
-                        </div>
-                    </div>`;
-                document.getElementById('modal-container').innerHTML = modalHTML;
-                document.getElementById('confirm-clear-btn').onclick = () => {
-                    const confirmInput = document.getElementById('delete-confirm-input');
-                    const passwordInput = document.getElementById('password-input');
-                    const errorDiv = document.getElementById('delete-error');
-                    
-                    if (confirmInput.value !== 'DELETE') {
-                        errorDiv.textContent = 'You must type "DELETE" to confirm.';
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
-                    if (passwordProtected && passwordInput.value !== localDB.settings.password) {
-                        errorDiv.textContent = 'Incorrect password.';
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
-                    this.executeClearAllProfiles();
-                };
-            },
-
-            async executeClearAllProfiles() {
-                if (localDB.profiles.length === 0) {
-                    alert("There are no profiles to delete.");
-                    this.closeModal();
-                    return;
-                }
-                const batch = writeBatch(db);
-                localDB.profiles.forEach(profile => {
-                    batch.delete(doc(db, "profiles", profile.id));
-                });
-                try {
-                    await batch.commit();
-                    this.closeModal();
-                    alert("All profiles have been deleted.");
-                } catch (e) {
-                    handleFirestoreError(e);
-                    alert("An error occurred while deleting profiles.");
-                }
             }
         };
 
         window.app = appFunctions;
-        window.app.showTab('dashboard');
+
+        window.onload = () => {
+            onSnapshot(collection(db, "profiles"), s => { localDB.profiles = s.docs.map(d => ({...d.data(), id: d.id })); refreshCurrentTab(); }, handleFirestoreError);
+            onSnapshot(query(collection(db, "clubRequests"), orderBy("createdAt", "desc")), s => { localDB.clubRequests = s.docs.map(d => ({...d.data(), id: d.id })); refreshCurrentTab(); }, handleFirestoreError);
+            onSnapshot(query(collection(db, "reminders"), orderBy("createdAt", "desc")), s => { localDB.reminders = s.docs.map(d => ({...d.data(), id: d.id })); refreshCurrentTab(); }, handleFirestoreError);
+            onSnapshot(doc(db, "settings", "introMessage"), d => { localDB.settings.introMessage = d.exists() ? d.data().text : ''; refreshCurrentTab(); }, handleFirestoreError);
+            onSnapshot(doc(db, "settings", "security"), d => { localDB.settings.password = d.exists() ? d.data().confirmationPassword : ""; refreshCurrentTab(); }, handleFirestoreError);
+            window.app.showTab('dashboard');
+        };
+
     </script>
 </body>
 </html>
