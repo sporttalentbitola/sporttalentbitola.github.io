@@ -115,6 +115,11 @@
             showTab('dashboard');
         };
 
+        function refreshCurrentTab() {
+            const activeTab = document.querySelector('.tab-active')?.dataset.tab;
+            if (activeTab) showTab(activeTab, false);
+        }
+        
         function showTab(tabName, changeTab = true) {
             if (changeTab) {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
@@ -139,9 +144,17 @@
             }, 50);
         }
 
-        function refreshCurrentTab() {
-            const activeTab = document.querySelector('.tab-active')?.dataset.tab;
-            if (activeTab) showTab(activeTab, false);
+        function getDashboardHTML() {
+            const sortedReminders = [...localDB.reminders].sort((a, b) => a.isCompleted - b.isCompleted);
+            const remindersList = sortedReminders.length > 0 ? sortedReminders.map(r => `<div class="flex items-center justify-between p-2 rounded-md hover:bg-gray-100"><div class="flex items-center"><input type="checkbox" ${r.isCompleted ? 'checked' : ''} onchange="toggleReminder('${r.id}')" class="h-5 w-5 rounded border-gray-300 text-red-500 focus:ring-red-500 mr-3"><span class="${r.isCompleted ? 'line-through text-gray-400' : ''}">${r.text}</span></div><button onclick="openDeleteModal('reminder', '${r.id}')" class="text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times"></i></button></div>`).join('') : `<p class="text-center text-gray-500">No reminders. Add one below!</p>`;
+            let connectionsFound = false;
+            const connectionsList = localDB.clubRequests.map(req => {
+                const matchingPlayers = localDB.profiles.filter(p => p.profileType === 'Player' && p.playerDetails && req.positions.includes(p.playerDetails.position) && req.salaryRange === p.playerDetails.salaryRequest);
+                if (matchingPlayers.length > 0) { connectionsFound = true; return `<div class="bg-gray-50 p-4 rounded-lg border"><div class="mb-3"><p class="font-bold text-lg">${req.clubName}</p><p class="text-sm text-gray-600">Looking for: ${req.positions.join(', ')}</p><p class="text-sm text-gray-600">Salary: ${req.salaryRange}</p></div><div class="border-t pt-3"><h4 class="font-semibold mb-2">Matching Players:</h4><ul class="space-y-1 list-disc list-inside text-sm">${matchingPlayers.map(p => `<li>${p.firstName} ${p.lastName} (${p.playerDetails.position.match(/\((.*?)\)/)[1]})</li>`).join('')}</ul></div></div>`; }
+                return '';
+            }).join('');
+            const connectionsHTML = connectionsFound ? connectionsList : `<p class="text-center text-gray-500 md:col-span-2">No automatic connections found.</p>`;
+            return `<div class="grid grid-cols-1 lg:grid-cols-3 gap-6"><div class="lg:col-span-2 space-y-6"><div class="bg-white p-6 rounded-lg shadow-md"><h2 class="text-xl font-bold mb-4">Reminders</h2><div class="space-y-3 mb-4">${remindersList}</div><div class="flex space-x-2"><input id="new-reminder-input" type="text" placeholder="Add a new reminder..." class="flex-grow border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-red-300 focus:border-red-300"><button onclick="addReminder()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">Add</button></div></div><div class="bg-white p-6 rounded-lg shadow-md"><h2 class="text-xl font-bold mb-4">Connected Requests</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${connectionsHTML}</div></div></div><div class="lg:col-span-1"><div class="bg-white p-6 rounded-lg shadow-md"><h2 class="text-xl font-bold mb-4">My Intro Message</h2><textarea id="intro-message" class="w-full h-48 border border-gray-300 rounded-md p-2 mb-4"></textarea><div class="flex space-x-2"><button onclick="saveIntroMessage()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">Save</button><button onclick="shareIntroMessage()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md">Share</button></div></div></div></div>`;
         }
 
         function getPlayerListHTML() {
@@ -182,6 +195,13 @@
             }).join('');
         }
 
+        function getClubRequestsHTML() {
+            let requestsHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">Club Requests</h2><button onclick="openAllClubRequestsReportModal()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Generate Full Report</button></div>`;
+            if (localDB.clubRequests.length === 0) { requestsHTML += `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No club requests yet.</div>`; return requestsHTML; }
+            requestsHTML += localDB.clubRequests.map(req => `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center mb-4"><div><p class="text-lg font-bold">${req.clubName} <span class="text-sm text-gray-500 font-normal">- ${req.country}</span></p><div class="flex flex-wrap gap-2 mt-2">${req.positions.map(p => `<span class="bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded-full">${p}</span>`).join('')}</div><p class="text-sm text-gray-600 mt-2">Salary Range: <span class="font-semibold">${req.salaryRange}</span></p><p class="text-xs text-gray-500 mt-1">${req.notes || ''}</p></div><div class="flex space-x-2"><button onclick="openClubRequestReportModal('${req.id}')" class="text-gray-500 hover:text-gray-700 p-2"><i class="fas fa-share-alt fa-lg"></i></button><button onclick="openClubRequestModal('${req.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button><button onclick="openDeleteModal('request', '${req.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button></div></div>`).join('');
+            return requestsHTML;
+        }
+
         function getContactsHTML() {
             const contacts = localDB.profiles.filter(p => p.profileType !== 'Player');
             contacts.sort((a, b) => a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName));
@@ -204,26 +224,6 @@
                     </div>
                 </div>`;
             }).join('');
-        }
-        
-        function getDashboardHTML() {
-            const sortedReminders = [...localDB.reminders].sort((a, b) => a.isCompleted - b.isCompleted);
-            const remindersList = sortedReminders.length > 0 ? sortedReminders.map(r => `<div class="flex items-center justify-between p-2 rounded-md hover:bg-gray-100"><div class="flex items-center"><input type="checkbox" ${r.isCompleted ? 'checked' : ''} onchange="toggleReminder('${r.id}')" class="h-5 w-5 rounded border-gray-300 text-red-500 focus:ring-red-500 mr-3"><span class="${r.isCompleted ? 'line-through text-gray-400' : ''}">${r.text}</span></div><button onclick="openDeleteModal('reminder', '${r.id}')" class="text-gray-400 hover:text-red-500 p-1"><i class="fas fa-times"></i></button></div>`).join('') : `<p class="text-center text-gray-500">No reminders. Add one below!</p>`;
-            let connectionsFound = false;
-            const connectionsList = localDB.clubRequests.map(req => {
-                const matchingPlayers = localDB.profiles.filter(p => p.profileType === 'Player' && p.playerDetails && req.positions.includes(p.playerDetails.position) && req.salaryRange === p.playerDetails.salaryRequest);
-                if (matchingPlayers.length > 0) { connectionsFound = true; return `<div class="bg-gray-50 p-4 rounded-lg border"><div class="mb-3"><p class="font-bold text-lg">${req.clubName}</p><p class="text-sm text-gray-600">Looking for: ${req.positions.join(', ')}</p><p class="text-sm text-gray-600">Salary: ${req.salaryRange}</p></div><div class="border-t pt-3"><h4 class="font-semibold mb-2">Matching Players:</h4><ul class="space-y-1 list-disc list-inside text-sm">${matchingPlayers.map(p => `<li>${p.firstName} ${p.lastName} (${p.playerDetails.position.match(/\((.*?)\)/)[1]})</li>`).join('')}</ul></div></div>`; }
-                return '';
-            }).join('');
-            const connectionsHTML = connectionsFound ? connectionsList : `<p class="text-center text-gray-500 md:col-span-2">No automatic connections found.</p>`;
-            return `<div class="grid grid-cols-1 lg:grid-cols-3 gap-6"><div class="lg:col-span-2 space-y-6"><div class="bg-white p-6 rounded-lg shadow-md"><h2 class="text-xl font-bold mb-4">Reminders</h2><div class="space-y-3 mb-4">${remindersList}</div><div class="flex space-x-2"><input id="new-reminder-input" type="text" placeholder="Add a new reminder..." class="flex-grow border border-gray-300 rounded-md p-2 focus:ring-2 focus:ring-red-300 focus:border-red-300"><button onclick="addReminder()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">Add</button></div></div><div class="bg-white p-6 rounded-lg shadow-md"><h2 class="text-xl font-bold mb-4">Connected Requests</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4">${connectionsHTML}</div></div></div><div class="lg:col-span-1"><div class="bg-white p-6 rounded-lg shadow-md"><h2 class="text-xl font-bold mb-4">My Intro Message</h2><textarea id="intro-message" class="w-full h-48 border border-gray-300 rounded-md p-2 mb-4"></textarea><div class="flex space-x-2"><button onclick="saveIntroMessage()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">Save</button><button onclick="shareIntroMessage()" class="flex-1 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md">Share</button></div></div></div></div>`;
-        }
-
-        function getClubRequestsHTML() {
-            let requestsHTML = `<div class="flex justify-between items-center mb-4"><h2 class="text-2xl font-bold">Club Requests</h2><button onclick="openAllClubRequestsReportModal()" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Generate Full Report</button></div>`;
-            if (localDB.clubRequests.length === 0) { requestsHTML += `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No club requests yet.</div>`; return requestsHTML; }
-            requestsHTML += localDB.clubRequests.map(req => `<div class="bg-white p-4 rounded-lg shadow-md flex justify-between items-center mb-4"><div><p class="text-lg font-bold">${req.clubName} <span class="text-sm text-gray-500 font-normal">- ${req.country}</span></p><div class="flex flex-wrap gap-2 mt-2">${req.positions.map(p => `<span class="bg-gray-200 text-gray-700 text-xs font-semibold px-2 py-1 rounded-full">${p}</span>`).join('')}</div><p class="text-sm text-gray-600 mt-2">Salary Range: <span class="font-semibold">${req.salaryRange}</span></p><p class="text-xs text-gray-500 mt-1">${req.notes || ''}</p></div><div class="flex space-x-2"><button onclick="openClubRequestReportModal('${req.id}')" class="text-gray-500 hover:text-gray-700 p-2"><i class="fas fa-share-alt fa-lg"></i></button><button onclick="openClubRequestModal('${req.id}')" class="text-blue-500 hover:text-blue-700 p-2"><i class="fas fa-edit fa-lg"></i></button><button onclick="openDeleteModal('request', '${req.id}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash-alt fa-lg"></i></button></div></div>`).join('');
-            return requestsHTML;
         }
 
         function getSettingsHTML() {
