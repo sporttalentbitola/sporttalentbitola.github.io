@@ -184,7 +184,7 @@
 
         function getContactsHTML() {
             const contacts = localDB.profiles.filter(p => p.profileType !== 'Player');
-            contacts.sort((a, b) => a.firstName.localeCompare(b.firstName) || a.lastName.localeCompare(b.lastName));
+            contacts.sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
             if (contacts.length === 0) return `<div class="bg-white p-6 rounded-lg shadow-md text-center text-gray-500">No contacts yet.</div>`;
             return contacts.map(contact => {
                 const statusText = contact.isWithoutClub ? 'Without a club' : `at ${contact.club}`;
