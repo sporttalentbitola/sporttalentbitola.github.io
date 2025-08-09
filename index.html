@@ -3,369 +3,438 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPORT TALENT Management</title>
-    
-    <!-- Tailwind CSS for styling -->
+    <title>SPORT TALENT</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
-        .tab-active { border-bottom-color: #ef4444; color: #ef4444; font-weight: 600; }
-        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 40; }
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #ef4444;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 2rem auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        body { font-family: 'Poppins', sans-serif; }
+        .tab.active { border-color: #ef4444; color: #ef4444; background-color: white; }
+        .modal-bg { background-color: rgba(0,0,0,0.6); }
+        .modal-content { transition: transform 0.3s ease-out; }
+        .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="antialiased text-gray-800">
+<body class="bg-gray-200">
 
-    <div id="app" class="max-w-7xl mx-auto p-4 md:p-6">
-
-        <header class="flex justify-between items-center bg-white p-4 rounded-lg shadow-md mb-6">
-            <div class="flex items-center space-x-3">
-                <img src="https://i.imgur.com/g8Ew32s.png" alt="Logo" class="h-12 w-12 rounded-full object-cover" onerror="this.onerror=null; this.src='https://placehold.co/100x100/e2e8f0/334155?text=ST';">
-                <h1 class="text-2xl font-bold text-gray-700 tracking-wider">SPORT TALENT</h1>
-            </div>
-            <button onclick="window.app.openAddChoiceModal()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg flex items-center space-x-2 transition duration-300">
-                <i class="fas fa-plus"></i>
-                <span class="hidden md:inline">Add New</span>
-            </button>
+    <div id="app-container" class="max-w-5xl mx-auto bg-gray-100 min-h-screen shadow-lg">
+        <!-- Header -->
+        <header class="bg-white shadow-md p-4 sticky top-0 z-20 flex items-center justify-center space-x-4">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 text-center tracking-wider">SPORT TALENT</h1>
         </header>
 
-        <div class="bg-white rounded-lg shadow-md mb-6">
-            <nav id="tabs" class="flex border-b border-gray-200 overflow-x-auto">
-                <button onclick="window.app.showTab('dashboard')" class="tab py-4 px-6 text-gray-500 hover:text-red-500 border-b-2 border-transparent transition duration-300 tab-active flex-shrink-0" data-tab="dashboard">Dashboard</button>
-                <button onclick="window.app.showTab('players')" class="tab py-4 px-6 text-gray-500 hover:text-red-500 border-b-2 border-transparent transition duration-300 flex-shrink-0" data-tab="players">Player List</button>
-                <button onclick="window.app.showTab('requests')" class="tab py-4 px-6 text-gray-500 hover:text-red-500 border-b-2 border-transparent transition duration-300 flex-shrink-0" data-tab="requests">Club Requests</button>
-                <button onclick="window.app.showTab('contacts')" class="tab py-4 px-6 text-gray-500 hover:text-red-500 border-b-2 border-transparent transition duration-300 flex-shrink-0" data-tab="contacts">Contacts</button>
-                <button onclick="window.app.showTab('settings')" class="tab py-4 px-6 text-gray-500 hover:text-red-500 border-b-2 border-transparent transition duration-300 flex-shrink-0" data-tab="settings">Settings</button>
-            </nav>
-        </div>
+        <!-- Tab Navigation -->
+        <nav class="bg-white shadow-sm sticky top-[80px] md:top-[84px] z-20">
+            <div id="tabs" class="flex justify-around border-b border-gray-300">
+                <button data-tab="dashboard" class="tab w-full py-3 px-2 text-center font-semibold text-gray-600 border-b-4 border-transparent hover:bg-gray-50 transition">Dashboard</button>
+                <button data-tab="players" class="tab w-full py-3 px-2 text-center font-semibold text-gray-600 border-b-4 border-transparent hover:bg-gray-50 transition">Players</button>
+                <button data-tab="requests" class="tab w-full py-3 px-2 text-center font-semibold text-gray-600 border-b-4 border-transparent hover:bg-gray-50 transition">Club Requests</button>
+                <button data-tab="contacts" class="tab w-full py-3 px-2 text-center font-semibold text-gray-600 border-b-4 border-transparent hover:bg-gray-50 transition">Contacts</button>
+            </div>
+        </nav>
 
-        <main id="content-area">
-            <!-- App content is rendered here by JavaScript -->
+        <!-- Main Content Area -->
+        <main id="content" class="p-4 md:p-6">
+            <!-- Content for each tab will be injected here -->
         </main>
 
     </div>
 
-    <div id="modal-container"></div>
+    <!-- Floating "NEW" Button -->
+    <button id="newBtn" class="fixed bottom-6 right-6 bg-green-600 text-white rounded-full p-4 shadow-xl hover:bg-green-700 transition transform hover:scale-110 z-30">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+    </button>
+    
+    <!-- Modals Container -->
+    <div id="modalContainer"></div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, doc, addDoc, setDoc, deleteDoc, updateDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+    <!-- "NEW" Button Options Modal -->
+    <div id="newOptionsModal" class="fixed inset-0 modal-bg flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 space-y-4 w-11/12 max-w-xs">
+            <h3 class="text-xl font-semibold text-center text-gray-800">What to add?</h3>
+            <button id="addNewPerson" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">New Player / Contact</button>
+            <button id="addNewRequest" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">New Club Request</button>
+            <button id="closeNewOptions" class="w-full bg-gray-200 text-gray-800 py-2 mt-4 rounded-lg hover:bg-gray-300">Cancel</button>
+        </div>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBpKCpXNPtkD21oB28hlGTz1KUliFXQIpI",
-            authDomain: "sporttalent-c3919.firebaseapp.com",
-            projectId: "sporttalent-c3919",
-            storageBucket: "sporttalent-c3919.appspot.com",
-            messagingSenderId: "981309667492",
-            appId: "1:981309667492:web:b0d0db7f9db8ce1f9b4e31"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
 
-        let localDB = {
-            profiles: [],
-            clubRequests: [],
-            reminders: [],
-            settings: { password: "" }
-        };
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- STATE MANAGEMENT ---
+            let appState = {
+                activeTab: 'dashboard',
+                people: [],
+                requests: [],
+                reminders: [],
+                myProfile: {}
+            };
 
-        const PROFILE_TYPES = ['Player', 'Coach', 'Sporting Director', 'President', 'Scout'];
-        const POSITIONS = ["Goalkeeper (GK)", "Right-Back (RB)", "Left-Back (LB)", "Centre-Back (CB)", "Defensive Midfielder (DM)", "Central Midfielder (CM)", "Attacking Midfielder (AM)", "Right Winger (RW)", "Left Winger (LW)", "Striker (ST)"];
-        const SALARY_RANGES = ["< 5k", "5k - 10k", "10k - 20k", "> 20k"];
+            // --- DOM ELEMENTS ---
+            const contentEl = document.getElementById('content');
+            const tabsContainer = document.getElementById('tabs');
+            const newBtn = document.getElementById('newBtn');
+            const newOptionsModal = document.getElementById('newOptionsModal');
+            const modalContainer = document.getElementById('modalContainer');
 
-        const handleFirestoreError = (error) => {
-            console.error("Firestore Error:", error);
-            if (error.code === 'unavailable' || error.code === 'permission-denied') {
-                document.getElementById('content-area').innerHTML = `
-                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-6 rounded-lg shadow-md" role="alert">
-                        <p class="font-bold text-xl">Database Connection Error</p>
-                        <p class="mt-2">Please check your internet connection or update your Firebase security rules.</p>
-                    </div>`;
-            }
-        };
+            // --- DATA INITIALIZATION ---
+            const loadData = () => {
+                appState.people = JSON.parse(localStorage.getItem('sportTalentPeople')) || [
+                    // --- FULL PLAYER DATABASE ---
+                    { id: 'p_dk', profileType: 'Player', firstName: 'Dan', lastName: 'Kucher', position: 'GK', club: 'FK Inhulets', status: 'Active Contract', salaryRange: '5k-10k' },
+                    { id: 'p_ap', profileType: 'Player', firstName: 'Anamarija', lastName: 'Prljevic', club: 'ZNK Split', position: 'GK', notes: 'Women Player', salaryRange: '< 5k' },
+                    { id: 'p_bs', profileType: 'Player', firstName: 'Boris', lastName: 'Sekulić', position: 'RB', club: 'Górnik Zabrze', status: 'Active Contract', notes: 'Also plays CB', salaryRange: '10k-20k' },
+                    { id: 'p_kt', profileType: 'Player', firstName: 'Kristijan', lastName: 'Tasevski', position: 'LB', club: 'Free Agent', status: 'Free Agent', notes: 'Versatile LB/RB/DMF', salaryRange: '< 5k' },
+                    { id: 'p_sr', profileType: 'Player', firstName: 'Sava', lastName: 'Radic', position: 'CB', club: 'FK Radnik Surdulica', status: 'Active Contract', salaryRange: '5k-10k' },
+                    { id: 'p_mb', profileType: 'Player', firstName: 'Marko', lastName: 'Bakić', position: 'DMF', club: 'OFI Crete', status: 'Active Contract', notes: 'Montenegro NT', salaryRange: '10k-20k' },
+                    { id: 'p_nb2', profileType: 'Player', firstName: 'Nemanja', lastName: 'Belaković', position: 'Winger', club: 'FK Radnicki Nis', status: 'Active Contract', salaryRange: '5k-10k' },
+                    { id: 'p_bg', profileType: 'Player', firstName: 'Boban', lastName: 'Georgiev', position: 'AMF', club: 'Free Agent', status: 'Free Agent', notes: 'EU Passport', salaryRange: '< 5k' },
+                    { id: 'p_mk3', profileType: 'Player', firstName: 'Mario', lastName: 'Krstovski', position: 'ST', club: 'FC Politehnica Iasi', status: 'Active Contract', salaryRange: '10k-20k' },
+                    { id: 'p_tm', profileType: 'Player', firstName: 'Tin', lastName: 'Matić', position: 'ST', club: 'NK Celje', status: 'Active Contract', notes: 'Also RW', salaryRange: '20k-50k' },
 
-        function refreshCurrentTab(scrollPos = null) {
-            const activeTab = document.querySelector('.tab-active')?.dataset.tab;
-            if (activeTab) window.app.showTab(activeTab, false, scrollPos);
-        }
-        
-        const appFunctions = {
-            showTab(tabName, changeTab = true, scrollPos = null) {
-                if (changeTab) {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('tab-active'));
-                    document.querySelector(`[data-tab="${tabName}"]`).classList.add('tab-active');
-                }
-                const container = document.getElementById('content-area');
-                container.innerHTML = `<div class="loader"></div>`;
-                setTimeout(() => {
-                    let contentHTML = '';
-                    switch(tabName) {
-                        case 'dashboard': contentHTML = this.getDashboardHTML(); break;
-                        case 'players': contentHTML = this.getPlayerListHTML(); break;
-                        case 'requests': contentHTML = this.getClubRequestsHTML(); break;
-                        case 'contacts': contentHTML = this.getContactsHTML(); break;
-                        case 'settings': contentHTML = this.getSettingsHTML(); break;
-                    }
-                    container.innerHTML = contentHTML;
-                    if (scrollPos) {
-                        container.scrollTop = scrollPos;
-                    }
-                }, 50);
-            },
+                    // Contacts
+                    { id: 'c1', profileType: 'Coach', firstName: 'Massimiliano', lastName: 'Canzi', club: 'Juventus Women FC - Italy' },
+                    { id: 'c3', profileType: 'Sporting Director', firstName: 'Karolis', lastName: 'Skinkys', club: 'Kerala Blasters FC - India' }
+                ];
 
-            getDashboardHTML() {
-                // ... (Dashboard HTML generation remains largely the same)
-                return `<div class="text-center p-8 bg-white rounded-lg shadow-md">Dashboard Content Here</div>`;
-            },
-
-            getPlayerListHTML() {
-                // ... (Player List HTML generation remains largely the same)
-                return `<div class="text-center p-8 bg-white rounded-lg shadow-md">Player List Content Here</div>`;
-            },
-
-            getClubRequestsHTML() {
-                // ... (Club Requests HTML generation remains largely the same)
-                return `<div class="text-center p-8 bg-white rounded-lg shadow-md">Club Requests Content Here</div>`;
-            },
-
-            getContactsHTML() {
-                // ... (Contacts HTML generation remains largely the same)
-                return `<div class="text-center p-8 bg-white rounded-lg shadow-md">Contacts Content Here</div>`;
-            },
-
-            getSettingsHTML() {
-                // ... (Settings HTML generation remains largely the same)
-                return `<div class="text-center p-8 bg-white rounded-lg shadow-md">Settings Content Here</div>`;
-            },
-            
-            async executeSaveProfile(id) {
-                const scrollPos = document.getElementById('content-area').scrollTop;
-                const isEditing = id !== 'null';
-                const profileType = document.getElementById('profileType').value;
-                const isPlayer = profileType === 'Player';
-                const newProfileData = { profileType, firstName: document.getElementById('firstName').value, lastName: document.getElementById('lastName').value, club: document.getElementById('club').value, isFreeAgent: isPlayer ? document.getElementById('isFreeAgent').checked : false, isWithoutClub: !isPlayer ? document.getElementById('isFreeAgent').checked : false, gender: document.getElementById('gender').value };
-                if (isPlayer) { newProfileData.playerDetails = { positions: Array.from(document.getElementById('positions').selectedOptions).map(o => o.value), salaryRequest: document.getElementById('salaryRequest').value, dob: document.getElementById('dob').value, isHighlighted: document.getElementById('isHighlighted').checked, videoLinks: document.getElementById('videoLinks').value.split(',').map(l => l.trim()).filter(l => l), } } 
-                else { const existingProfile = isEditing ? localDB.profiles.find(p => p.id === id) : {}; newProfileData.contact = existingProfile.contact || { phone: '', comment: '' }; }
-                if (isEditing) { await setDoc(doc(db, "profiles", id), newProfileData); } else { await addDoc(collection(db, "profiles"), newProfileData); }
-                this.closeModal();
-                refreshCurrentTab(scrollPos);
-            },
-
-            async executeSaveClubRequest(id) {
-                const scrollPos = document.getElementById('content-area').scrollTop;
-                const isEditing = id !== 'null';
-                const newRequestData = { clubName: document.getElementById('clubName').value, country: document.getElementById('country').value, positions: Array.from(document.getElementById('reqPositions').selectedOptions).map(o => o.value), salaryRange: document.getElementById('reqSalary').value, notes: document.getElementById('reqNotes').value, isDirect: document.getElementById('isDirect').checked };
-                if (isEditing) { await updateDoc(doc(db, "clubRequests", id), newRequestData); } else { newRequestData.createdAt = serverTimestamp(); await addDoc(collection(db, "clubRequests"), newRequestData); }
-                this.closeModal();
-                refreshCurrentTab(scrollPos);
-            },
-
-            async handlePasswordSave() {
-                const currentPasswordInput = document.getElementById('current-password');
-                const newPasswordInput = document.getElementById('new-password');
-                const confirmPasswordInput = document.getElementById('confirm-password');
-                const errorDiv = document.getElementById('settings-error');
-                const statusDiv = document.getElementById('settings-status');
-                
-                errorDiv.classList.add('hidden');
-                statusDiv.textContent = '';
-
-                const isPasswordSet = localDB.settings.password && localDB.settings.password.length > 0;
-
-                if (isPasswordSet) {
-                    if (currentPasswordInput.value !== localDB.settings.password) {
-                        errorDiv.textContent = 'Current password is incorrect.';
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
-                    if (newPasswordInput.value !== confirmPasswordInput.value) {
-                        errorDiv.textContent = 'New passwords do not match.';
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
-                } else {
-                    if (!newPasswordInput.value) {
-                        errorDiv.textContent = 'New password cannot be empty.';
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
-                    if (newPasswordInput.value !== confirmPasswordInput.value) {
-                        errorDiv.textContent = 'Passwords do not match.';
-                        errorDiv.classList.remove('hidden');
-                        return;
-                    }
-                }
-
-                try {
-                    await setDoc(doc(db, "settings", "security"), { confirmationPassword: newPasswordInput.value });
-                    statusDiv.textContent = "Password updated successfully!";
-                    this.closeModal();
-                    setTimeout(() => this.showTab('settings'), 2000);
-                } catch (error) {
-                    errorDiv.textContent = "Error saving password.";
-                    errorDiv.classList.remove('hidden');
-                    console.error("Error saving password:", error);
-                }
-            },
-
-            closeModal() { document.getElementById('modal-container').innerHTML = ''; },
-            openAddChoiceModal() { document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-sm p-6"><h3 class="text-xl font-bold text-center mb-6">What to add?</h3><div class="space-y-3"><button onclick="window.app.openProfileModal()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg">New Player / Contact</button><button onclick="window.app.openClubRequestModal()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg">New Club Request</button><button onclick="window.app.closeModal()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 px-4 rounded-lg mt-4">Cancel</button></div></div>`; },
-            
-            openDeleteModal(type, id) {
-                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-sm p-6 text-center"><i class="fas fa-exclamation-triangle text-5xl text-red-400 mb-4"></i><h3 class="text-xl font-bold mb-2">Are you sure?</h3><p class="text-gray-600 mb-6">This action cannot be undone.</p><div class="flex justify-center space-x-4"><button onclick="window.app.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg">Cancel</button><button onclick="window.app.requestDeleteConfirmation('${type}', '${id}')" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-6 rounded-lg">Delete</button></div></div>`;
-            },
-            
-            requestDeleteConfirmation(type, id) {
-                const password = localDB.settings.password;
-                if (password && password.length > 0) {
-                    this.openConfirmationModal(() => this.executeDeleteItem(type, id));
-                } else {
-                    this.executeDeleteItem(type, id);
-                }
-            },
-
-            async executeDeleteItem(type, id) {
-                const scrollPos = document.getElementById('content-area').scrollTop;
-                if (type === 'profile') await deleteDoc(doc(db, "profiles", id));
-                else if (type === 'request') await deleteDoc(doc(db, "clubRequests", id));
-                else if (type === 'reminder') await deleteDoc(doc(db, "reminders", id));
-                this.closeModal();
-                refreshCurrentTab(scrollPos);
-            },
-
-            requestSaveConfirmation(type, id) {
-                const password = localDB.settings.password;
-                if (password && password.length > 0) {
-                    if (type === 'profile') { this.openConfirmationModal(() => this.executeSaveProfile(id)); } 
-                    else if (type === 'request') { this.openConfirmationModal(() => this.executeSaveClubRequest(id)); }
-                } else {
-                    if (type === 'profile') { this.executeSaveProfile(id); } 
-                    else if (type === 'request') { this.executeSaveClubRequest(id); }
-                }
-            },
-
-            openConfirmationModal(callback) {
-                const modalHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-sm p-6"><h3 class="text-xl font-bold mb-4">Confirm Action</h3><p class="text-gray-600 mb-4">Please enter the password to proceed.</p><input type="password" id="password-input" class="w-full border border-gray-300 rounded-md p-2 mb-4"><div id="password-error" class="text-red-500 text-sm mb-4 hidden">Incorrect password. Please try again.</div><div class="flex justify-end space-x-3"><button type="button" onclick="window.app.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="button" id="confirm-action-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Confirm</button></div></div>`;
-                document.getElementById('modal-container').innerHTML = modalHTML;
-                document.getElementById('confirm-action-btn').onclick = () => {
-                    const passwordInput = document.getElementById('password-input');
-                    const errorDiv = document.getElementById('password-error');
-                    if (passwordInput.value === localDB.settings.password) {
-                        callback();
-                    } else {
-                        errorDiv.classList.remove('hidden');
-                        passwordInput.focus();
-                    }
+                appState.requests = JSON.parse(localStorage.getItem('sportTalentRequests')) || [
+                    { id: 'r_pav', country: 'Italy', club: 'Pavia FC', positions: 'CB, DMF', budget: '€2k-€4k/month', notes: 'Looking for experienced players.' },
+                    { id: 'r_pun', country: 'India', club: 'Punjab FC', positions: 'CB, DM, AM, ST, Winger', budget: '80–120K USD net/season' },
+                    { id: 'r_haj', country: 'Croatia', club: 'Hajduk Split', positions: 'CB, DM, CM, LW, RW, CF', budget: '€20-25k/month', notes: 'Free or free loan or small transfer' },
+                    { id: 'r_ist2', country: 'Croatia', club: 'Istra Pula', positions: 'LB', budget: '€4-6k/month', notes: 'Free, Max 28 years old' }
+                ];
+                appState.reminders = JSON.parse(localStorage.getItem('sportTalentReminders')) || [
+                    { id: 'rem1', text: 'Follow up with Pogoń Szczecin about winger options.', completed: false }
+                ];
+                appState.myProfile = JSON.parse(localStorage.getItem('sportTalentMyProfile')) || {
+                    introMessage: `Dear [Player Name],\n\nMy name is Zoran Veljanovski, a licensed FIFA Agent (ID: 202405-6005). I am writing to you as I have been following your career with great interest and believe I can assist in your professional development.\n\nTo explore a potential collaboration, could you please clarify if you are currently under contract with another agent or agency, and what your ambitions are for the upcoming season?\n\nI am available for a confidential discussion at your convenience.\n\nBest regards,\n\nZoran Veljanovski\nSport Talent\nEmail: sporttalentbitola@gmail.com\nPhone / WhatsApp: +389 75 339 519 | +49 163 789 7703`
                 };
-            },
-
-            copyReport() { const textarea = document.getElementById('report-text-area'); textarea.select(); document.execCommand('copy'); alert('Report copied to clipboard!'); },
-
-            openProfileModal(id = null) {
-                const isEditing = id !== null;
-                const profile = isEditing ? localDB.profiles.find(p => p.id === id) : {};
-                const title = isEditing ? `Edit ${profile.firstName} ${profile.lastName}` : 'Add New Person';
-                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop"></div><div class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-full overflow-y-auto"><form onsubmit="event.preventDefault(); window.app.requestSaveConfirmation('profile', '${id}');" class="p-6 space-y-4"><h3 class="text-2xl font-bold mb-4">${title}</h3><div id="form-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div><div id="player-details-section" class="hidden pt-4 border-t"><h4 class="text-lg font-semibold mb-2">Player Details</h4><div id="player-fields-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div></div><div class="flex justify-end space-x-3 pt-4 border-t"><button type="button" onclick="window.app.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Save</button></div></form></div></div>`;
-                this.populateProfileForm(profile);
-            },
-
-            populateProfileForm(profile) {
-                const formContainer = document.getElementById('form-fields-container');
-                const playerDetailsContainer = document.getElementById('player-fields-container');
-                const isPlayer = (profile?.profileType === 'Player') || !profile?.profileType;
-                formContainer.innerHTML = `<div><label class="block text-sm font-medium text-gray-700">Profile Type</label><select id="profileType" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" onchange="window.app.togglePlayerDetails(this.value)">${PROFILE_TYPES.map(type => `<option value="${type}" ${profile?.profileType === type ? 'selected' : ''}>${type}</option>`).join('')}</select></div><div><label class="block text-sm font-medium text-gray-700">Gender</label><select id="gender" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"><option value="Male" ${profile?.gender === 'Male' ? 'selected' : ''}>Male</option><option value="Female" ${profile?.gender === 'Female' ? 'selected' : ''}>Female</option></select></div><div><label class="block text-sm font-medium">First Name*</label><input type="text" id="firstName" value="${profile?.firstName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Last Name*</label><input type="text" id="lastName" value="${profile?.lastName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Club*</label><input type="text" id="club" value="${profile?.club || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div class="flex items-end pb-1"><label class="flex items-center"><input type="checkbox" id="isFreeAgent" ${profile?.isFreeAgent || profile?.isWithoutClub ? 'checked' : ''} class="rounded border-gray-300 text-red-600 shadow-sm"><span id="checkbox-label" class="ml-2 text-sm text-gray-600">${isPlayer ? 'Or check if Free Agent' : 'Or check if Without a Club'}</span></label></div>`;
-                playerDetailsContainer.innerHTML = `<div><label class="block text-sm font-medium">Positions (select multiple)*</label><select id="positions" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-24">${POSITIONS.map(pos => `<option value="${pos}" ${profile?.playerDetails?.positions?.includes(pos) ? 'selected' : ''}>${pos}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Salary Request*</label><select id="salaryRequest" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${SALARY_RANGES.map(range => `<option value="${range}" ${profile?.playerDetails?.salaryRequest === range ? 'selected' : ''}>${range}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Date of Birth</label><input type="date" id="dob" value="${profile?.playerDetails?.dob || ''}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div class="flex items-end pb-1"><label class="flex items-center"><input type="checkbox" id="isHighlighted" ${profile?.playerDetails?.isHighlighted ? 'checked' : ''} class="rounded border-gray-300 text-red-600 shadow-sm"><span class="ml-2 text-sm text-gray-600">Highlight Player</span></label></div><div class="md:col-span-2"><label class="block text-sm font-medium">Video Links (comma-separated)</label><textarea id="videoLinks" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-16">${profile?.playerDetails?.videoLinks?.join(', ') || ''}</textarea></div>`;
-                this.togglePlayerDetails(document.getElementById('profileType').value);
-            },
-
-            togglePlayerDetails(profileType) {
-                const playerSection = document.getElementById('player-details-section');
-                const checkboxLabel = document.getElementById('checkbox-label');
-                if (profileType === 'Player') { playerSection.classList.remove('hidden'); checkboxLabel.textContent = 'Or check if Free Agent'; } 
-                else { playerSection.classList.add('hidden'); checkboxLabel.textContent = 'Or check if Without a Club'; }
-            },
+            };
             
-            openClubRequestModal(id = null) {
-                const isEditing = id !== null;
-                const request = isEditing ? localDB.clubRequests.find(r => r.id === id) : {};
-                const title = isEditing ? `Edit Request from ${request.clubName}` : 'Add New Club Request';
-                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop"></div><div class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 p-4"><div class="bg-white rounded-lg shadow-xl w-full max-w-lg"><form onsubmit="event.preventDefault(); window.app.requestSaveConfirmation('request', '${id}');" class="p-6 space-y-4"><h3 class="text-2xl font-bold mb-4">${title}</h3><div><label class="block text-sm font-medium">Club Name*</label><input type="text" id="clubName" value="${request?.clubName || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Country*</label><input type="text" id="country" value="${request?.country || ''}" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></div><div><label class="block text-sm font-medium">Positions (select multiple)*</label><select id="reqPositions" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm h-40">${POSITIONS.map(pos => `<option value="${pos}" ${request?.positions?.includes(pos) ? 'selected' : ''}>${pos}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Salary Range*</label><select id="reqSalary" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${SALARY_RANGES.map(range => `<option value="${range}" ${request?.salaryRange === range ? 'selected' : ''}>${range}</option>`).join('')}</select></div><div><label class="block text-sm font-medium">Notes</label><textarea id="reqNotes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">${request?.notes || ''}</textarea></div><div class="flex items-center"><input type="checkbox" id="isDirect" ${request?.isDirect ? 'checked' : ''} class="rounded border-gray-300 text-red-600 shadow-sm"><label for="isDirect" class="ml-2 text-sm text-gray-600">This is a DIRECT request</label></div><div class="flex justify-end space-x-3 pt-4 border-t"><button type="button" onclick="window.app.closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg">Cancel</button><button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg">Save</button></div></form></div></div>`;
-            },
+            const saveData = () => {
+                localStorage.setItem('sportTalentPeople', JSON.stringify(appState.people));
+                localStorage.setItem('sportTalentRequests', JSON.stringify(appState.requests));
+                localStorage.setItem('sportTalentReminders', JSON.stringify(appState.reminders));
+                localStorage.setItem('sportTalentMyProfile', JSON.stringify(appState.myProfile));
+            };
 
-            openReportModal(playerId) {
-                const profile = localDB.profiles.find(p => p.id === playerId);
-                if (!profile) return;
+            // --- GEMINI API CALL ---
+            const callGeminiAPI = async (prompt) => { /* ... */ };
 
-                let reportText = `PROFILE REPORT\n\nName: ${profile.firstName} ${profile.lastName}\nStatus: ${profile.isWithoutClub ? 'Without a club' : 'at ' + profile.club}`;
-                if (profile.profileType === 'Player' && profile.playerDetails) {
-                     reportText = `PLAYER REPORT\n\nName: ${profile.firstName} ${profile.lastName}\nPosition: ${profile.playerDetails.positions.join(', ')}\nStatus: ${profile.isFreeAgent ? 'Free Agent' : 'Under contract at ' + profile.club}\n\nDescription: A talented ${profile.playerDetails.positions[0]} known for their vision and technical ability.\n\nVideo(s): ${profile.playerDetails.videoLinks.join('\n')}\nCV: ${profile.playerDetails.cvLink}`;
+            // --- TEMPLATE & RENDERING ---
+            const render = () => {
+                tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === appState.activeTab));
+                switch (appState.activeTab) {
+                    case 'dashboard': renderDashboardPage(); break;
+                    case 'players': renderPlayersPage(); break;
+                    case 'contacts': renderContactsPage(); break;
+                    case 'requests': renderRequestsPage(); break;
                 }
-                const subject = encodeURIComponent(`Profile Report: ${profile.firstName} ${profile.lastName}`);
-                const body = encodeURIComponent(reportText.trim());
-                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg p-6"><h3 class="text-xl font-bold mb-4">Report for ${profile.firstName} ${profile.lastName}</h3><textarea id="report-text-area" readonly class="w-full h-64 bg-gray-100 p-3 rounded-md border font-mono text-sm">${reportText.trim()}</textarea><div class="flex flex-wrap justify-end gap-2 mt-4"><button onclick="window.app.copyReport()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Copy Report</button><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(reportText.trim())}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Share via WhatsApp</a><a href="mailto:?subject=${subject}&body=${body}" target="_blank" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Share via Email</a></div></div>`;
-            },
-            
-            openClubRequestReportModal(requestId) {
-                const request = localDB.clubRequests.find(r => r.id === requestId);
-                if (!request) return;
-                const reportText = `CLUB REQUEST\n\nClub: ${request.clubName} (${request.country})\nPositions Needed: ${request.positions.join(', ')}\nSalary Range: ${request.salaryRange}\n\nNotes: ${request.notes || 'N/A'}`;
-                const subject = encodeURIComponent(`Club Request: ${request.clubName}`);
-                const body = encodeURIComponent(reportText.trim());
-                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg p-6"><h3 class="text-xl font-bold mb-4">Report for ${request.clubName}</h3><textarea id="report-text-area" readonly class="w-full h-64 bg-gray-100 p-3 rounded-md border font-mono text-sm">${reportText.trim()}</textarea><div class="flex flex-wrap justify-end gap-2 mt-4"><button onclick="window.app.copyReport()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Copy Report</button><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(reportText.trim())}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Share via WhatsApp</a><a href="mailto:?subject=${subject}&body=${body}" target="_blank" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Share via Email</a></div></div>`;
-            },
+            };
 
-            openAllClubRequestsReportModal() {
-                if (localDB.clubRequests.length === 0) {
-                    alert("No club requests to report.");
+            const renderDashboardPage = () => {
+                const reminders = appState.reminders || [];
+                let remindersHtml = reminders.filter(r => !r.completed)
+                    .map(r => `<li class="py-2 px-3 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-800 rounded-r-md">${r.text}</li>`).join('');
+                if (!remindersHtml) remindersHtml = '<li>No active reminders.</li>';
+
+                const matches = findHotMatches() || [];
+                let matchesHtml = matches.map(match => `
+                    <div class="py-3 px-4 bg-blue-100 border-l-4 border-blue-400 rounded-r-md">
+                        <p class="font-semibold text-blue-800">${match.request.club} is looking for a ${match.request.positions}.</p>
+                        <p class="text-blue-700">Potential match: <span class="font-bold">${match.player.firstName} ${match.player.lastName}</span> (${match.player.position})</p>
+                    </div>
+                `).join('');
+                if (!matchesHtml) matchesHtml = '<p>No automatic matches found right now.</p>';
+                
+                const introMessage = appState.myProfile ? appState.myProfile.introMessage : '';
+
+                contentEl.innerHTML = `
+                    <div class="space-y-8">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Reminders</h2>
+                            <ul class="space-y-2">${remindersHtml}</ul>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-4">Compatible Combinations</h2>
+                            <div class="space-y-3">${matchesHtml}</div>
+                        </div>
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <h3 class="text-xl font-semibold text-gray-900 mb-3">My Intro Message</h3>
+                            <textarea id="introMessage" class="w-full p-2 border rounded-md h-48">${introMessage}</textarea>
+                            <div class="mt-4 flex space-x-2">
+                                <button id="saveIntroBtn" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">Save Message</button>
+                                <button id="shareIntroBtn" class="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700">Share via WhatsApp</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            };
+
+            const renderPlayersPage = () => {
+                const players = appState.people.filter(p => p.profileType === 'Player');
+                const positionMap = { 'Goalkeepers': ['GK'], 'Defenders': ['CB', 'RB', 'LB'], 'Midfielders': ['DMF', 'AMF', 'Winger', 'CM'], 'Forwards': ['ST', 'CF'] };
+                let html = '';
+                Object.keys(positionMap).forEach(posGroup => {
+                    const playersInGroup = players.filter(p => positionMap[posGroup].includes(p.position)).sort((a, b) => (b.isHighlighted || false) - (a.isHighlighted || false));
+                    if (playersInGroup.length > 0) {
+                        html += `<h2 class="text-xl font-bold text-gray-700 mt-6 mb-3 border-b-2 border-red-500 pb-2">${posGroup}</h2>`;
+                        html += '<div class="space-y-3">';
+                        playersInGroup.forEach(player => { html += createPersonCard(player); });
+                        html += '</div>';
+                    }
+                });
+                if (html === '') html = '<div class="text-center text-gray-500 p-6 bg-white rounded-lg shadow">No players found.</div>';
+                contentEl.innerHTML = html;
+            };
+
+            const renderContactsPage = () => {
+                const contacts = appState.people.filter(p => p.profileType !== 'Player').sort((a, b) => a.lastName.localeCompare(b.lastName));
+                let html = '<div class="space-y-3">';
+                if (contacts.length > 0) {
+                    contacts.forEach(contact => { html += createPersonCard(contact); });
+                } else {
+                    html = '<div class="text-center text-gray-500 p-6 bg-white rounded-lg shadow">No contacts found.</div>';
+                }
+                html += '</div>';
+                contentEl.innerHTML = html;
+            };
+
+            const renderRequestsPage = () => {
+                let html = '<div class="space-y-3">';
+                if (appState.requests.length > 0) {
+                    appState.requests.forEach(req => { html += createRequestCard(req); });
+                } else {
+                     html = '<div class="text-center text-gray-500 p-6 bg-white rounded-lg shadow">No club requests found.</div>';
+                }
+                html += '</div>';
+                contentEl.innerHTML = html;
+            };
+            
+            const formatDate = (dateString) => {
+                if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return '';
+                const [year, month, day] = dateString.split('-');
+                return `${day}.${month}.${year}`;
+            };
+
+            const createPersonCard = (person) => {
+                const isPlayer = person.profileType === 'Player';
+                const cardBg = isPlayer && person.isHighlighted ? 'bg-yellow-100 border-l-4 border-yellow-400' : 'bg-white';
+                let statusHtml = '';
+                if (isPlayer) {
+                    const statusColor = person.status === 'Free Agent' ? 'bg-green-500' : 'bg-blue-500';
+                    statusHtml = `<p class="text-xs text-white mt-2 inline-block px-2 py-0.5 rounded-full ${statusColor}">${person.status}</p>`;
+                    if (person.status === 'Active Contract' && person.contractUntil) {
+                        const endDate = new Date(person.contractUntil);
+                        const sixMonthsFromNow = new Date();
+                        sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
+                        const isEndingSoon = endDate < sixMonthsFromNow;
+                        const dateColor = isEndingSoon ? 'text-red-600 font-semibold' : 'text-gray-500';
+                        const formattedDate = formatDate(person.contractUntil);
+                        statusHtml += `<span class="ml-2 text-xs ${dateColor}">(until ${formattedDate})</span>`;
+                    }
+                } else {
+                    statusHtml = `<p class="text-xs bg-gray-500 text-white mt-2 inline-block px-2 py-0.5 rounded-full">${person.profileType}</p>`;
+                }
+                
+                return `
+                    <div class="${cardBg} rounded-lg shadow p-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900">${person.firstName} ${person.lastName}</h3>
+                                <p class="text-gray-600">${isPlayer ? person.position : person.profileType} at <span class="font-medium text-gray-800">${person.club || 'N/A'}</span></p>
+                                ${statusHtml}
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                ${isPlayer ? `<button class="view-profile-btn p-2 rounded-md bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold text-sm" data-id="${person.id}">View Profile</button>` : ''}
+                                <button class="edit-btn p-2 rounded-md hover:bg-gray-200" data-type="person" data-id="${person.id}"><svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg></button>
+                                <button class="delete-btn p-2 rounded-md hover:bg-gray-200" data-type="person" data-id="${person.id}"><svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            };
+
+            const createRequestCard = (req) => { /* ... */ };
+            
+            // --- MATCHING LOGIC ---
+            const findHotMatches = () => { /* ... */ };
+
+            // --- MODAL HANDLING ---
+            const showAiContentModal = (title, contentPromise) => { /* ... */ };
+            const showPlayerProfileModal = (player) => { /* ... */ };
+            const showPersonModal = (person = null) => {
+                const isEdit = person !== null;
+                const modalHTML = `
+                    <div class="fixed inset-0 modal-bg flex items-center justify-center z-40" id="personModalInstance">
+                        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 max-w-2xl modal-content transform scale-95" id="personModalContent">
+                            <div class="p-6 border-b"><h2 class="text-2xl font-semibold">${isEdit ? 'Edit Person' : 'Add New Person'}</h2></div>
+                            <div class="p-6 max-h-[70vh] overflow-y-auto">
+                                <form id="personForm" class="space-y-4">
+                                    <input type="hidden" id="personId" value="${isEdit ? person.id : ''}">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Profile Type</label>
+                                        <select id="profileType" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-gray-50" required>
+                                            <option>Player</option><option>Coach</option><option>Sporting Director</option><option>Scout</option><option>President</option>
+                                        </select>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div><label class="block text-sm font-medium">First Name*</label><input type="text" id="firstName" class="mt-1 block w-full p-2 border rounded" value="${isEdit ? person.firstName : ''}" required></div>
+                                        <div><label class="block text-sm font-medium">Last Name*</label><input type="text" id="lastName" class="mt-1 block w-full p-2 border rounded" value="${isEdit ? person.lastName : ''}" required></div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium">Club*</label>
+                                        <input type="text" id="club" placeholder="Club Name FC - Country" class="mt-1 block w-full p-2 border rounded" value="${isEdit ? person.club : ''}">
+                                        <div class="flex items-center mt-2">
+                                            <input type="checkbox" id="isFreeAgent" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                            <label for="isFreeAgent" class="ml-2 block text-sm text-gray-900">Or check if Free Agent / Without a Club</label>
+                                        </div>
+                                    </div>
+                                    <div id="playerFields" class="space-y-4 border-t pt-4 mt-4">
+                                        <h3 class="font-semibold text-lg text-gray-800">Player Details</h3>
+                                        <div><label class="block text-sm font-medium">Position*</label><input type="text" id="position" class="mt-1 block w-full p-2 border rounded" value="${isEdit && person.position ? person.position : ''}"></div>
+                                        <div><label class="block text-sm font-medium">Status (e.g., Free Agent, €2.5M)</label><input type="text" id="status" class="mt-1 block w-full p-2 border rounded" value="${isEdit && person.status ? person.status : 'Tracking'}"></div>
+                                        <div><label class="block text-sm font-medium">Contract End Date</label><input type="date" id="contractUntil" class="mt-1 block w-full p-2 border rounded" value="${isEdit && person.contractUntil ? person.contractUntil : ''}"></div>
+                                        <div><label class="block text-sm font-medium">Video Link (YouTube)</label><input type="url" id="videoURL" class="mt-1 block w-full p-2 border rounded" value="${isEdit && person.videoURL ? person.videoURL : ''}"></div>
+                                        <div><label class="block text-sm font-medium">CV Link (Transfermarkt)</label><input type="url" id="cvURL" class="mt-1 block w-full p-2 border rounded" value="${isEdit && person.cvURL ? person.cvURL : ''}"></div>
+                                        <div class="flex items-center">
+                                            <input type="checkbox" id="isHighlighted" class="h-4 w-4 text-yellow-500 border-gray-300 rounded focus:ring-yellow-400">
+                                            <label for="isHighlighted" class="ml-2 block text-sm text-gray-900">Highlight this player (add to Hot List)</label>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="p-4 bg-gray-50 flex justify-end space-x-3">
+                                <button type="button" class="close-modal-btn bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300">Cancel</button>
+                                <button type="submit" form="personForm" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                modalContainer.innerHTML = modalHTML;
+                
+                const profileTypeSelect = document.getElementById('profileType');
+                const playerFieldsEl = document.getElementById('playerFields');
+                const clubInput = document.getElementById('club');
+                const freeAgentCheckbox = document.getElementById('isFreeAgent');
+                const highlightedCheckbox = document.getElementById('isHighlighted');
+                const freeAgentLabel = document.querySelector('label[for="isFreeAgent"]');
+
+                const toggleFields = () => { 
+                    const isPlayer = profileTypeSelect.value === 'Player';
+                    playerFieldsEl.style.display = isPlayer ? 'block' : 'none'; 
+                    freeAgentLabel.textContent = isPlayer ? 'Or check if Free Agent' : 'Or check if Without a Club';
+                };
+                
+                freeAgentCheckbox.addEventListener('change', () => {
+                    const clubValue = profileTypeSelect.value === 'Player' ? 'Free Agent' : 'Without a Club';
+                    if (freeAgentCheckbox.checked) {
+                        clubInput.value = clubValue;
+                        clubInput.disabled = true;
+                    } else {
+                        clubInput.value = isEdit && person.club !== clubValue ? person.club : '';
+                        clubInput.disabled = false;
+                    }
+                });
+
+                if (isEdit) {
+                    profileTypeSelect.value = person.profileType;
+                    if (person.club === 'Free Agent' || person.club === 'Without a Club') {
+                        freeAgentCheckbox.checked = true;
+                        clubInput.disabled = true;
+                    }
+                    if (person.isHighlighted) {
+                        highlightedCheckbox.checked = true;
+                    }
+                }
+                toggleFields();
+                profileTypeSelect.addEventListener('change', toggleFields);
+                
+                setTimeout(() => document.getElementById('personModalContent').classList.remove('scale-95'), 10);
+            };
+            
+            const showRequestModal = (request = null) => { /* ... */ };
+            
+            // --- EVENT HANDLERS ---
+            tabsContainer.addEventListener('click', (e) => { if (e.target.matches('.tab')) { appState.activeTab = e.target.dataset.tab; render(); } });
+            contentEl.addEventListener('click', (e) => {
+                const btn = e.target.closest('button'); if (!btn) return;
+                
+                if (btn.id === 'saveIntroBtn') {
+                    appState.myProfile.introMessage = document.getElementById('introMessage').value;
+                    saveData();
+                    alert('Profile message updated!');
                     return;
                 }
-                let reportText = "ALL ACTIVE CLUB REQUESTS\n\n";
-                localDB.clubRequests.forEach(req => {
-                    reportText += `----------------------------------------\n`;
-                    reportText += `Club: ${req.clubName} (${req.country})\n`;
-                    reportText += `Positions: ${req.positions.join(', ')}\n`;
-                    reportText += `Salary: ${req.salaryRange}\n`;
-                    reportText += `Notes: ${req.notes || 'N/A'}\n`;
-                });
-                const subject = encodeURIComponent(`All Active Club Requests`);
-                const body = encodeURIComponent(reportText.trim());
-                document.getElementById('modal-container').innerHTML = `<div class="modal-backdrop" onclick="window.app.closeModal()"></div><div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-xl z-50 w-full max-w-lg p-6"><h3 class="text-xl font-bold mb-4">Full Club Requests Report</h3><textarea id="report-text-area" readonly class="w-full h-64 bg-gray-100 p-3 rounded-md border font-mono text-sm">${reportText.trim()}</textarea><div class="flex flex-wrap justify-end gap-2 mt-4"><button onclick="window.app.copyReport()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Copy Report</button><a href="https://api.whatsapp.com/send?text=${encodeURIComponent(reportText.trim())}" target="_blank" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Share via WhatsApp</a><a href="mailto:?subject=${subject}&body=${body}" target="_blank" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg">Share via Email</a></div></div>`;
-            }
-        };
 
-        window.app = appFunctions;
+                if (btn.id === 'shareIntroBtn') {
+                    const message = appState.myProfile.introMessage;
+                    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                    return;
+                }
 
-        window.onload = () => {
-            onSnapshot(collection(db, "profiles"), s => { localDB.profiles = s.docs.map(d => ({...d.data(), id: d.id })); refreshCurrentTab(); }, handleFirestoreError);
-            onSnapshot(query(collection(db, "clubRequests"), orderBy("createdAt", "desc")), s => { localDB.clubRequests = s.docs.map(d => ({...d.data(), id: d.id })); refreshCurrentTab(); }, handleFirestoreError);
-            onSnapshot(query(collection(db, "reminders"), orderBy("createdAt", "desc")), s => { localDB.reminders = s.docs.map(d => ({...d.data(), id: d.id })); refreshCurrentTab(); }, handleFirestoreError);
-            onSnapshot(doc(db, "settings", "introMessage"), d => { localDB.settings.introMessage = d.exists() ? d.data().text : ''; refreshCurrentTab(); }, handleFirestoreError);
-            onSnapshot(doc(db, "settings", "security"), d => { localDB.settings.password = d.exists() ? d.data().confirmationPassword : ""; refreshCurrentTab(); }, handleFirestoreError);
-            window.app.showTab('dashboard');
-        };
+                const type = btn.dataset.type; const id = btn.dataset.id;
+                if (btn.classList.contains('view-profile-btn')) {
+                    const player = appState.people.find(p => p.id === id);
+                    if (player) showPlayerProfileModal(player);
+                } else if (btn.classList.contains('delete-btn')) {
+                    const itemToDelete = type === 'person' ? appState.people.find(p => p.id === id) : appState.requests.find(r => r.id === id);
+                    const itemName = type === 'person' ? `${itemToDelete.firstName} ${itemToDelete.lastName}` : itemToDelete.club;
+                    if (confirm(`Are you sure you want to delete ${itemName}?`)) {
+                        if (type === 'person') appState.people = appState.people.filter(p => p.id !== id);
+                        else if (type === 'request') appState.requests = appState.requests.filter(r => r.id !== id);
+                        saveData(); render();
+                    }
+                } else if (btn.classList.contains('edit-btn')) {
+                    if (type === 'person') showPersonModal(appState.people.find(p => p.id === id));
+                    else if (type === 'request') showRequestModal(appState.requests.find(r => r.id === id));
+                } // ... other button handlers ...
+            });
+            modalContainer.addEventListener('click', (e) => { 
+                if (e.target.classList.contains('close-modal-btn')) { 
+                    modalContainer.innerHTML = ''; 
+                } 
+            });
+            modalContainer.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (e.target.id === 'personForm') {
+                    const id = document.getElementById('personId').value;
+                    const personData = {
+                        id: id || 'p' + Date.now(),
+                        profileType: document.getElementById('profileType').value,
+                        firstName: document.getElementById('firstName').value,
+                        lastName: document.getElementById('lastName').value,
+                        club: document.getElementById('club').value,
+                        position: document.getElementById('position').value,
+                        status: document.getElementById('status').value,
+                        contractUntil: document.getElementById('contractUntil').value,
+                        videoURL: document.getElementById('videoURL')?.value,
+                        cvURL: document.getElementById('cvURL')?.value,
+                        isHighlighted: document.getElementById('isHighlighted')?.checked || false,
+                    };
+                    if (id) { 
+                        const index = appState.people.findIndex(p => p.id === id);
+                        appState.people[index] = { ...appState.people[index], ...personData };
+                    } else { 
+                        appState.people.push(personData);
+                    }
+                    saveData(); render(); modalContainer.innerHTML = '';
+                } else if (e.target.id === 'requestForm') {
+                    // ... request form submission logic ...
+                }
+            });
+            newBtn.addEventListener('click', () => newOptionsModal.classList.remove('hidden'));
+            newOptionsModal.querySelector('#closeNewOptions').addEventListener('click', () => newOptionsModal.classList.add('hidden'));
+            newOptionsModal.querySelector('#addNewPerson').addEventListener('click', () => { showPersonModal(); newOptionsModal.classList.add('hidden'); });
+            newOptionsModal.querySelector('#addNewRequest').addEventListener('click', () => { showRequestModal(); newOptionsModal.classList.add('hidden'); });
 
+            // --- INITIALIZATION ---
+            loadData();
+            render();
+        });
     </script>
 </body>
 </html>
