@@ -562,8 +562,7 @@
                 <h2 id="modal-title">Add/Edit Profile</h2>
                 <button class="close-modal-btn">&times;</button>
             </div>
-            <form id="main-form">
-                </form>
+            <form id="main-form"></form>
         </div>
     </div>
     
@@ -573,8 +572,7 @@
                 <h2 id="view-modal-title">Player Profile</h2>
                 <button class="close-modal-btn">&times;</button>
             </div>
-            <div id="view-modal-content" class="view-modal-content">
-                </div>
+            <div id="view-modal-content" class="view-modal-content"></div>
             <div class="modal-actions">
                  <button id="copy-details-btn" class="btn-submit">Copy Details for Sharing</button>
             </div>
@@ -601,10 +599,28 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore.js"></script>
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // --- 1. CONFIGURATION & CONSTANTS ---
-        
+
+        // --- 1. FIREBASE & CONFIGURATION ---
+
+        // IMPORTANT: PASTE YOUR FIREBASE CONFIGURATION OBJECT HERE
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const firebaseApp = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         // The password for confirming deletions can be changed here.
         const MASTER_PASSWORD = 'admin123';
 
@@ -621,7 +637,6 @@
             LEAGUE_GENDERS: ["Male", "Female"],
             COUNTRIES: ["Germany", "Spain", "Italy", "England", "France", "Portugal", "Netherlands", "USA", "Brazil", "Argentina", "Other"]
         };
-
         const ALL_POSITIONS = Object.values(CONFIG.POSITIONS).flat();
 
         // --- 2. STATE MANAGEMENT ---
@@ -655,58 +670,72 @@
         let passwordConfirmCallback = null;
         let playerToShareId = null;
 
-        // --- 4. DATA PERSISTENCE ---
+        // --- 4. DATA PERSISTENCE (with FIREBASE) ---
 
-        const getInitialData = () => {
-            // THIS IS THE BUILT-IN DATA. It will load every time the app starts fresh.
-            return {
-                players: [
-                    { id: 'player1', firstName: "Leon", lastName: "Goretzka", gender: "Male", dob: "1995-02-06", club: "Bayern Munich", positions: ["Central Midfielder (CM)", "Attacking Midfielder (AM)"], positionCategory: "Midfielders", salary: "> €40k/month", cvLink: "https://www.transfermarkt.com/leon-goretzka/profil/spieler/153084", videos: [], highlight: true },
-                    { id: 'player2', firstName: "Alessia", lastName: "Russo", gender: "Female", dob: "1999-02-08", club: "Arsenal WFC", positions: ["Striker (ST)"], positionCategory: "Forwards", salary: "€10k - €20k/month", cvLink: "https://www.transfermarkt.com/alessia-russo/profil/spieler/340845", videos: [], highlight: true },
-                    { id: 'player3', firstName: "David", lastName: "Alaba", gender: "Male", dob: "1992-06-24", club: "Real Madrid", positions: ["Centre-Back (CB)", "Left-Back (LB)"], positionCategory: "Defenders", salary: "€20k - €40k/month", cvLink: "", videos: [], highlight: false },
-                    { id: 'player4', firstName: "Manuel", lastName: "Neuer", gender: "Male", dob: "1986-03-27", club: "Bayern Munich", positions: ["Goalkeeper (GK)"], positionCategory: "Goalkeepers", salary: "> €40k/month", cvLink: "https://www.transfermarkt.de/manuel-neuer/profil/spieler/17259", videos: ["https://www.youtube.com/watch?v=HrnQD0THaTY"], highlight: true },
-                ],
-                clubs: [
-                    { id: 'club1', createdAt: new Date('2025-08-09T12:00:00Z').toISOString(), name: "Manchester United", country: "England", leagueGender: "Male", positions: ["Striker (ST)", "Central Midfielder (CM)"], budget: "> €40k/month", direct: true },
-                    { id: 'club2', createdAt: new Date('2025-08-01T10:00:00Z').toISOString(), name: "Chelsea FC Women", country: "England", leagueGender: "Female", positions: ["Striker (ST)"], budget: "€20k - €40k/month", direct: false }
-                ],
-                contacts: [
-                    { id: 'contact1', firstName: "Pep", lastName: "Guardiola", role: "Coach", club: "Manchester City", phone: "", email: "", connection: "" },
-                    { id: 'contact2', firstName: "Emma", lastName: "Hayes", role: "Coach", club: "Chelsea FC Women", phone: "", email: "", connection: "" }
-                ],
-                reminders: [
-                    { text: "Follow up with AC Milan about the winger", done: false },
-                    { text: "Send player profile to scout", done: true }
-                ],
-                introMessage: "Dear Sporting Director,\n\nMy name is Zoran Veljanovski (FIFA ID: 202405-6005), and I am a licensed FIFA Football Agent. I am reaching out to introduce a player who I believe possesses the qualities to significantly strengthen your squad.\n\nPlease let me know if you are open to receiving more details, including video highlights and a full performance report.\n\nBest regards,\nZoran Veljanovski"
-            };
-        };
-        
-        const saveData = () => {
-            try {
-                localStorage.setItem('sportTalentData', JSON.stringify(AppState.data));
-                showToast('Data saved!');
-            } catch (e) {
-                console.error("Could not save to localStorage. It might be blocked or full.", e);
-                showToast('Could not save data.');
-            }
-        };
-
-        const loadData = () => {
-            const savedData = localStorage.getItem('sportTalentData');
-            if (savedData) {
-                try {
-                    const parsedData = JSON.parse(savedData);
-                    if (parsedData.players) { // Simple check to see if data is valid
-                        AppState.data = parsedData;
-                        return; 
+        // Listen for real-time updates from Firestore
+        const listenToData = () => {
+            const collections = ['players', 'clubs', 'contacts', 'reminders', 'settings'];
+            collections.forEach(coll => {
+                db.collection(coll).onSnapshot(snapshot => {
+                    if (coll === 'settings') {
+                        // Handle introMessage specifically
+                        const settingsDoc = snapshot.docs.find(doc => doc.id === 'introMessage');
+                        AppState.data.introMessage = settingsDoc ? settingsDoc.data().value : getInitialData().introMessage;
+                    } else {
+                        // Handle other collections
+                        AppState.data[coll] = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     }
-                } catch (e) {
-                    console.error("Could not parse localStorage data. Reverting to initial data.", e);
+                    render(); // Re-render the UI with new data
+                }, error => {
+                    console.error(`Error fetching ${coll}: `, error);
+                    showToast(`Error loading data. Check console.`);
+                });
+            });
+        };
+
+        // Get initial data for first-time setup
+        const getInitialData = () => ({
+            players: [
+                 { id: 'player1', firstName: "Leon", lastName: "Goretzka", gender: "Male", dob: "1995-02-06", club: "Bayern Munich", positions: ["Central Midfielder (CM)", "Attacking Midfielder (AM)"], positionCategory: "Midfielders", salary: "> €40k/month", cvLink: "https://www.transfermarkt.com/leon-goretzka/profil/spieler/153084", videos: [], highlight: true },
+                 { id: 'player2', firstName: "Alessia", lastName: "Russo", gender: "Female", dob: "1999-02-08", club: "Arsenal WFC", positions: ["Striker (ST)"], positionCategory: "Forwards", salary: "€10k - €20k/month", cvLink: "https://www.transfermarkt.com/alessia-russo/profil/spieler/340845", videos: [], highlight: true },
+            ],
+            clubs: [
+                 { id: 'club1', createdAt: new Date('2025-08-09T12:00:00Z').toISOString(), name: "Manchester United", country: "England", leagueGender: "Male", positions: ["Striker (ST)", "Central Midfielder (CM)"], budget: "> €40k/month", direct: true },
+            ],
+            contacts: [
+                 { id: 'contact1', firstName: "Pep", lastName: "Guardiola", role: "Coach", club: "Manchester City", phone: "", email: "", connection: "" },
+            ],
+            reminders: [
+                 { text: "Follow up with AC Milan about the winger", done: false },
+            ],
+            introMessage: "Dear Sporting Director,\n\nMy name is Zoran Veljanovski (FIFA ID: 202405-6005), and I am a licensed FIFA Football Agent..."
+        });
+
+        // Function to populate Firestore with initial data if collections are empty
+        const populateInitialData = async () => {
+            const initialData = getInitialData();
+            for (const collName in initialData) {
+                if (collName !== 'introMessage') {
+                    const snapshot = await db.collection(collName).limit(1).get();
+                    if (snapshot.empty) {
+                        console.log(`Populating initial data for ${collName}...`);
+                        const batch = db.batch();
+                        initialData[collName].forEach(item => {
+                            const docRef = db.collection(collName).doc(item.id || undefined); // Use existing ID or let Firestore generate
+                            batch.set(docRef, item);
+                        });
+                        await batch.commit();
+                    }
                 }
             }
-            AppState.data = getInitialData();
+            // Handle intro message separately in settings collection
+            const settingsRef = db.collection('settings').doc('introMessage');
+            const settingsDoc = await settingsRef.get();
+            if (!settingsDoc.exists) {
+                await settingsRef.set({ value: initialData.introMessage });
+            }
         };
+
 
         // --- 5. CORE RENDERING LOGIC ---
         const render = () => {
@@ -724,7 +753,7 @@
         };
 
         // --- 6. VIEW-SPECIFIC RENDERERS ---
-
+        // (No changes needed in these functions, they read from AppState)
         const renderDashboard = () => {
             const compatibleCombinations = findCompatibleCombinations();
             appContent.innerHTML = `
@@ -755,11 +784,11 @@
                 </div>`;
         };
         
-        const renderReminder = (reminder, index) => `
+        const renderReminder = (reminder) => `
             <div class="reminder ${reminder.done ? 'done' : ''}">
-                <input type="checkbox" data-index="${index}" class="reminder-check" ${reminder.done ? 'checked' : ''}>
+                <input type="checkbox" data-id="${reminder.id}" class="reminder-check" ${reminder.done ? 'checked' : ''}>
                 <label>${reminder.text}</label>
-                <button class="btn-delete-reminder" data-index="${index}" title="Delete Reminder">&times;</button>
+                <button class="btn-delete-reminder" data-id="${reminder.id}" title="Delete Reminder">&times;</button>
             </div>`;
         
         const renderCombination = (combo) => `
@@ -805,13 +834,13 @@
             const listContent = document.getElementById('player-list-content');
             if(Object.values(groupedPlayers).length > 0) {
                  listContent.innerHTML = Object.keys(CONFIG.POSITIONS).map(category => {
-                    if (!groupedPlayers[category] || groupedPlayers[category].length === 0) return '';
-                    return `
-                        <h2 class="group-header">${category}</h2>
-                        <div class="card-grid">
-                            ${groupedPlayers[category].map(player => renderCard(player, 'player')).join('')}
-                        </div>`;
-                }).join('');
+                     if (!groupedPlayers[category] || groupedPlayers[category].length === 0) return '';
+                     return `
+                         <h2 class="group-header">${category}</h2>
+                         <div class="card-grid">
+                             ${groupedPlayers[category].map(player => renderCard(player, 'player')).join('')}
+                         </div>`;
+                 }).join('');
             } else {
                  listContent.innerHTML = `<p class="no-content">No players match the current filters.</p>`;
             }
@@ -832,26 +861,26 @@
             
             appContent.innerHTML = `
                  <div class="filters">
-                    <select id="club-filter-sort" class="club-filter-select">
-                        <option value="newest" ${filters.sortBy === 'newest' ? 'selected' : ''}>Newest</option>
-                    </select>
-                    <select id="club-filter-position" class="club-filter-select">
-                        <option value="all">All Positions</option>
-                        ${ALL_POSITIONS.map(p => `<option value="${p}" ${filters.position === p ? 'selected' : ''}>${p}</option>`).join('')}
-                    </select>
-                    <select id="club-filter-budget" class="club-filter-select">
-                        <option value="all">All Budgets</option>
-                        ${CONFIG.BUDGET_RANGES.map(b => `<option value="${b}" ${filters.budget === b ? 'selected' : ''}>${b}</option>`).join('')}
-                    </select>
-                     <select id="club-filter-country" class="club-filter-select">
-                        <option value="all">All Countries</option>
-                        ${CONFIG.COUNTRIES.map(c => `<option value="${c}" ${filters.country === c ? 'selected' : ''}>${c}</option>`).join('')}
-                    </select>
-                    <button id="club-filter-direct" class="${filters.direct ? 'active-direct' : ''}">DIRECT</button>
-                </div>
-                <div class="card-grid">
-                    ${filteredClubs.length > 0 ? filteredClubs.map(club => renderCard(club, 'club')).join('') : '<p class="no-content">No club requests match filters.</p>'}
-                </div>`;
+                     <select id="club-filter-sort" class="club-filter-select">
+                         <option value="newest" ${filters.sortBy === 'newest' ? 'selected' : ''}>Newest</option>
+                     </select>
+                     <select id="club-filter-position" class="club-filter-select">
+                         <option value="all">All Positions</option>
+                         ${ALL_POSITIONS.map(p => `<option value="${p}" ${filters.position === p ? 'selected' : ''}>${p}</option>`).join('')}
+                     </select>
+                     <select id="club-filter-budget" class="club-filter-select">
+                         <option value="all">All Budgets</option>
+                         ${CONFIG.BUDGET_RANGES.map(b => `<option value="${b}" ${filters.budget === b ? 'selected' : ''}>${b}</option>`).join('')}
+                     </select>
+                      <select id="club-filter-country" class="club-filter-select">
+                         <option value="all">All Countries</option>
+                         ${CONFIG.COUNTRIES.map(c => `<option value="${c}" ${filters.country === c ? 'selected' : ''}>${c}</option>`).join('')}
+                     </select>
+                     <button id="club-filter-direct" class="${filters.direct ? 'active-direct' : ''}">DIRECT</button>
+                 </div>
+                 <div class="card-grid">
+                     ${filteredClubs.length > 0 ? filteredClubs.map(club => renderCard(club, 'club')).join('') : '<p class="no-content">No club requests match filters.</p>'}
+                 </div>`;
         };
 
         const renderContacts = () => {
@@ -918,7 +947,7 @@
         };
         
         // --- 7. MODAL & FORM LOGIC ---
-        
+        // (Minor changes to find items from AppState)
         const openModal = (type, id = null) => {
             const isEditing = id !== null;
             let item = {}, title = '';
@@ -927,14 +956,13 @@
             mainForm.dataset.type = type;
             mainForm.dataset.id = id || '';
             
+            const collectionName = `${type}s`;
+
             switch (type) {
                 case 'player':
                     title = isEditing ? 'Edit Player' : 'Add Player';
                     if (isEditing) item = AppState.data.players.find(p => p.id === id);
                     mainForm.innerHTML = getPlayerFormHtml(item);
-                    mainForm.querySelector('#player-gender').addEventListener('change', e => {
-                        if (e.target.value === 'Female') mainForm.querySelector('#player-highlight').checked = true;
-                    });
                     break;
                 case 'club':
                     title = isEditing ? 'Edit Club Request' : 'Add Club Request';
@@ -945,9 +973,6 @@
                     title = isEditing ? 'Edit Contact' : 'Add Contact';
                     if (isEditing) item = AppState.data.contacts.find(c => c.id === id);
                     mainForm.innerHTML = getContactFormHtml(item);
-                     mainForm.querySelector('#contact-no-club').addEventListener('change', e => {
-                        mainForm.querySelector('#contact-club').disabled = e.target.checked;
-                     });
                     break;
                 case 'reminder':
                     title = 'Add Reminder';
@@ -983,7 +1008,7 @@
         
         const closeModal = (modal) => modal.classList.remove('visible');
 
-        const handleFormSubmit = (e) => {
+        const handleFormSubmit = async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData.entries());
@@ -991,41 +1016,53 @@
             const id = e.target.dataset.id;
 
             try {
+                let itemData;
+                const collectionName = `${type}s`;
+                
                 switch (type) {
                     case 'player':
-                        updateOrAddItem({
-                            id: id || generateId(), firstName: data.firstName, lastName: data.lastName, gender: data.gender, dob: data.dob, club: data.club,
+                        itemData = {
+                            firstName: data.firstName, lastName: data.lastName, gender: data.gender, dob: data.dob, club: data.club,
                             positions: formData.getAll('positions'), positionCategory: getPositionCategory(formData.getAll('positions')[0]), salary: data.salary,
                             cvLink: data.cvLink, videos: [data.video1, data.video2, data.video3].filter(v => v), highlight: data.highlight === 'on',
-                        }, 'players');
+                        };
                         break;
                     case 'club':
                         const existingClub = id ? AppState.data.clubs.find(c => c.id === id) : null;
-                        updateOrAddItem({
-                           id: id || generateId(), createdAt: existingClub ? existingClub.createdAt : new Date().toISOString(),
-                           name: data.name, country: data.country, leagueGender: data.leagueGender, positions: formData.getAll('positions'), budget: data.budget, direct: data.direct === 'on'
-                        }, 'clubs');
+                        itemData = {
+                            createdAt: existingClub ? existingClub.createdAt : new Date().toISOString(),
+                            name: data.name, country: data.country, leagueGender: data.leagueGender, positions: formData.getAll('positions'), budget: data.budget, direct: data.direct === 'on'
+                        };
                         break;
                     case 'contact':
-                         updateOrAddItem({
-                           id: id || generateId(), firstName: data.firstName, lastName: data.lastName, role: data.role,
-                           club: data.noClub === 'on' ? '' : data.club, phone: data.phone, email: data.email, connection: data.connection
-                        }, 'contacts');
+                        itemData = {
+                            firstName: data.firstName, lastName: data.lastName, role: data.role,
+                            club: data.noClub === 'on' ? '' : data.club, phone: data.phone, email: data.email, connection: data.connection
+                        };
                         break;
                     case 'reminder':
-                        AppState.data.reminders.push({ text: data.text, done: false });
+                        itemData = { text: data.text, done: false };
                         break;
                 }
-                saveData();
-                render();
+
+                if (id) {
+                    await db.collection(collectionName).doc(id).set(itemData, { merge: true });
+                    showToast(`${type} updated!`);
+                } else {
+                    await db.collection(collectionName).add(itemData);
+                    showToast(`${type} added!`);
+                }
+                
                 closeModal(formModal);
+                // No need to call render() here, onSnapshot will handle it.
             } catch (error) {
                 console.error("Form submission error:", error);
-                alert(`Error saving data: ${error.message}`);
+                showToast(`Error saving data: ${error.message}`);
             }
         };
 
         // --- 8. HTML GENERATORS FOR FORMS ---
+        // (No changes needed in these functions)
         const getPlayerFormHtml = (p = {}) => `
             <div class="form-group"><label for="player-firstname">First Name</label><input type="text" id="player-firstname" name="firstName" value="${p.firstName || ''}" required></div>
             <div class="form-group"><label for="player-lastname">Last Name</label><input type="text" id="player-lastname" name="lastName" value="${p.lastName || ''}" required></div>
@@ -1066,6 +1103,7 @@
         
         // --- 9. EVENT LISTENERS ---
         const setupEventListeners = () => {
+            // (Most listeners are the same, just a few modifications)
             document.querySelector('nav').addEventListener('click', e => {
                 if (e.target.matches('.nav-tab')) {
                     AppState.activeTab = e.target.dataset.tab;
@@ -1115,27 +1153,20 @@
             
             if (target.matches('.btn-view')) openViewPlayerModal(target.dataset.id);
             else if (target.matches('.btn-edit')) openModal(target.dataset.type, target.dataset.id);
-            else if (target.matches('.btn-delete')) confirmWithPassword(() => {
-                deleteItem(target.dataset.type, target.dataset.id);
-                saveData();
-                render();
+            else if (target.matches('.btn-delete')) confirmWithPassword(async () => {
+                await db.collection(`${target.dataset.type}s`).doc(target.dataset.id).delete();
+                showToast(`${target.dataset.type} deleted.`);
             });
-            else if (target.matches('.btn-delete-reminder')) confirmWithPassword(() => {
-                const index = parseInt(target.dataset.index, 10);
-                AppState.data.reminders.splice(index, 1);
-                saveData();
-                render();
+            else if (target.matches('.btn-delete-reminder')) confirmWithPassword(async () => {
+                await db.collection('reminders').doc(target.dataset.id).delete();
+                showToast('Reminder deleted.');
             });
             else if (target.id === 'add-reminder-btn') openModal('reminder');
-            else if (target.matches('.reminder-check')) {
-                const index = parseInt(target.dataset.index, 10);
-                AppState.data.reminders[index].done = target.checked;
-                saveData();
-                render();
-            }
             else if (target.id === 'save-intro-btn') {
-                AppState.data.introMessage = document.getElementById('intro-message-text').value;
-                saveData();
+                const newIntro = document.getElementById('intro-message-text').value;
+                db.collection('settings').doc('introMessage').set({ value: newIntro })
+                    .then(() => showToast('Intro message saved!'))
+                    .catch(err => showToast(`Error: ${err.message}`));
             }
             else if (target.id === 'share-intro-btn') {
                 navigator.clipboard.writeText(document.getElementById('intro-message-text').value)
@@ -1162,9 +1193,13 @@
                 filters.budget = document.getElementById('club-filter-budget').value;
                 filters.country = document.getElementById('club-filter-country').value;
                 render();
+            } else if (e.target.matches('.reminder-check')) {
+                const id = e.target.dataset.id;
+                const isDone = e.target.checked;
+                db.collection('reminders').doc(id).update({ done: isDone });
             }
         };
-
+        
         const handleCopyDetails = () => {
             if (!playerToShareId) return;
             const player = AppState.data.players.find(p => p.id === playerToShareId);
@@ -1186,7 +1221,7 @@
         };
 
         // --- 10. UTILITY & HELPER FUNCTIONS ---
-        const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+        // (No changes needed in these functions)
         const calculateAge = (dobString) => {
             if (!dobString) return 'N/A';
             const age = new Date().getFullYear() - new Date(dobString).getFullYear();
@@ -1201,15 +1236,6 @@
             Object.values(grouped).forEach(group => group.sort(sortFn));
             return grouped;
         };
-        const updateOrAddItem = (item, collectionName) => {
-            const index = AppState.data[collectionName].findIndex(i => i.id === item.id);
-            if (index > -1) AppState.data[collectionName][index] = item;
-            else AppState.data[collectionName].push(item);
-        };
-        const deleteItem = (type, id) => {
-            const coll = `${type}s`;
-            AppState.data[coll] = AppState.data[coll].filter(item => item.id !== id);
-        };
         const confirmWithPassword = (callback) => {
             passwordConfirmCallback = callback;
             passwordModal.classList.add('visible');
@@ -1222,6 +1248,7 @@
         };
         
         // --- 11. CORE BUSINESS LOGIC ---
+        // (No changes needed in this function)
         const findCompatibleCombinations = () => {
             const matches = [];
             const sortedClubs = [...AppState.data.clubs].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -1244,10 +1271,10 @@
         };
 
         // --- 12. INITIALIZATION ---
-        const init = () => {
-            loadData();
+        const init = async () => {
             setupEventListeners();
-            render();
+            await populateInitialData(); // Check and add initial data if needed
+            listenToData(); // Start listening for real-time updates
         };
         
         init();
