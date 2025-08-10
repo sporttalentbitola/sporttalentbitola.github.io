@@ -1,5 +1,1379 @@
 <!DOCTYPE html>
+<html lang="en<!DOCTYPE html>
 <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPORT TALENT - Agent Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- 1. General & Theming --- */
+        :root {
+            --primary-bg: #f4f7fc;
+            --secondary-bg: #ffffff;
+            --header-bg: #1a202c;
+            --primary-text: #2d3748;
+            --secondary-text: #718096;
+            --accent-color: #4299e1;
+            --accent-hover: #2b6cb0;
+            --border-color: #e2e8f0;
+            --danger-color: #e53e3e;
+            --success-color: #48bb78;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--primary-text);
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        /* --- 2. Layout & Core Components --- */
+        #app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 100px; /* Space for FAB */
+        }
+
+        header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 1rem 1.5rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-weight: 700;
+            font-size: 1.75rem;
+            letter-spacing: 1px;
+        }
+
+        nav {
+            display: flex;
+            background-color: var(--secondary-bg);
+            box-shadow: var(--card-shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav button {
+            flex-grow: 1;
+            padding: 0.8rem 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--secondary-text);
+            cursor: pointer;
+            transition: color 0.2s ease, border-color 0.2s ease;
+        }
+
+        nav button:hover {
+            color: var(--primary-text);
+        }
+
+        nav button.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+
+        main {
+            padding: 1.5rem;
+        }
+        
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: var(--secondary-bg);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .filters .toggle-group, .filters .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filters button, .filters select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background-color: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+        
+        .filters button.active, .filters button:hover {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+        
+        .filters button.active-direct {
+             background-color: var(--success-color);
+             border-color: var(--success-color);
+             color: white;
+        }
+
+        .group-header {
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary-text);
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .card-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        @media (min-width: 768px) {
+            .card-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 1024px) {
+            .card-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        .card {
+            background-color: var(--secondary-bg);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .card-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .card-info {
+            font-size: 0.95rem;
+            color: var(--secondary-text);
+        }
+        
+        .card-info strong {
+            color: var(--primary-text);
+        }
+
+        .card-actions {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        
+        .card-actions button {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .card-actions button:hover {
+            opacity: 0.8;
+        }
+
+        .btn-view { background-color: var(--accent-color); color: white; }
+        .btn-edit { background-color: #f6ad55; color: white; }
+        .btn-delete { background-color: var(--danger-color); color: white; }
+
+        /* --- 3. Dashboard Specific --- */
+        .dashboard-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: 1fr;
+        }
+        
+        @media (min-width: 1024px) {
+            .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+            .dashboard-section.intro-message { grid-column: 1 / -1; }
+        }
+
+        .dashboard-section {
+            background-color: var(--secondary-bg);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            padding: 1.5rem;
+        }
+
+        .dashboard-section h2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .dashboard-section h2 button {
+             padding: 0.3rem 0.6rem;
+             font-size: 0.8rem;
+             border-radius: 5px;
+             border: none;
+             background-color: var(--accent-color);
+             color: white;
+             cursor: pointer;
+        }
+        
+        .reminder {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+        }
+        .reminder input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .reminder.done label {
+            text-decoration: line-through;
+            color: var(--secondary-text);
+        }
+
+        .intro-message textarea {
+            width: 100%;
+            min-height: 150px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        
+        .intro-message .actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        
+        .intro-message .actions button {
+            padding: 0.6rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .btn-save { background-color: var(--success-color); color: white; }
+        .btn-share { background-color: var(--accent-color); color: white; }
+        
+        .combination-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .combination-card h4 { color: var(--accent-color); }
+        .combination-card .player-match { margin-top: 0.5rem; padding-left: 1rem; }
+        .no-content { text-align: center; color: var(--secondary-text); padding: 2rem; }
+
+        /* --- 4. Floating Action Button --- */
+        #add-new-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 2.5rem;
+            font-weight: 300;
+            line-height: 60px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 1000;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+
+        #add-new-btn:hover {
+            background-color: var(--accent-hover);
+            transform: scale(1.05);
+        }
+
+        /* --- 5. Modals --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 1rem;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s 0.3s, opacity 0.3s ease;
+        }
+
+        .modal-overlay.visible {
+            visibility: visible;
+            opacity: 1;
+            transition: visibility 0s, opacity 0.3s ease;
+        }
+
+        .modal {
+            background-color: var(--secondary-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal-overlay.visible .modal {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close-modal-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            font-weight: 300;
+            cursor: pointer;
+            color: var(--secondary-text);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="tel"],
+        .form-group input[type="date"],
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+        }
+        
+        .form-group select[multiple] {
+            height: 120px;
+        }
+
+        .form-group .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group .checkbox-group input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .modal-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        .modal-actions button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .btn-cancel {
+            background-color: var(--secondary-text);
+            color: white;
+        }
+        
+        .btn-submit {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+        
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--header-bg);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        #toast.show {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <header>
+            <h1>SPORT TALENT</h1>
+        </header>
+
+        <nav>
+            <button data-tab="dashboard" class="nav-tab active">Dashboard</button>
+            <button data-tab="players" class="nav-tab">Player List</button>
+            <button data-tab="clubs" class="nav-tab">Club Requests</button>
+            <button data-tab="contacts" class="nav-tab">Contacts</button>
+        </nav>
+
+        <main id="app-content">
+            </main>
+    </div>
+
+    <button id="add-new-btn">+</button>
+    <div id="toast"></div>
+
+    <div id="add-new-chooser-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Add New...</h2>
+                <button class="close-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>What would you like to add?</p>
+                <div class="modal-actions" style="justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-submit" data-type="player">Player</button>
+                    <button class="btn-submit" data-type="club">Club Request</button>
+                    <button class="btn-submit" data-type="contact">Contact</button>
+                    <button class="btn-submit" data-type="reminder">Reminder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="form-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modal-title">Add/Edit Profile</h2>
+                <button class="close-modal-btn">&times;</button>
+            </div>
+            <form id="main-form">
+                </form>
+        </div>
+    </div>
+
+    <div id="password-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Confirm Action</h2>
+                <button class="close-modal-btn">&times;</button>
+            </div>
+            <p>Please enter the password to confirm this action.</p>
+            <form id="password-form">
+                <div class="form-group">
+                    <label for="password-input">Password</label>
+                    <input type="password" id="password-input" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel close-modal-btn">Cancel</button>
+                    <button type="submit" class="btn-submit">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 1. CONFIGURATION & CONSTANTS ---
+        const CONFIG = {
+            PASSWORD: 'admin123', // Password for confirmation modals
+            POSITIONS: {
+                Goalkeepers: ["Goalkeeper (GK)"],
+                Defenders: ["Centre-Back (CB)", "Right-Back (RB)", "Left-Back (LB)", "Wing-Back (RWB/LWB)"],
+                Midfielders: ["Defensive Midfielder (DM)", "Central Midfielder (CM)", "Attacking Midfielder (AM)", "Right Midfielder (RM)", "Left Midfielder (LM)"],
+                Forwards: ["Winger (RW/LW)", "Striker (ST)", "Centre-Forward (CF)"]
+            },
+            SALARY_RANGES: ["< €5k/month", "€5k - €10k/month", "€10k - €20k/month", "€20k - €40k/month", "> €40k/month"],
+            BUDGET_RANGES: ["< €5k/month", "€5k - €10k/month", "€10k - €20k/month", "€20k - €40k/month", "> €40k/month", "Flexible"],
+            CONTACT_ROLES: ["Coach", "Sporting Director", "Scout", "President", "Agent", "Other"],
+            COUNTRIES: ["Germany", "Spain", "Italy", "England", "France", "Portugal", "Netherlands", "USA", "Brazil", "Argentina", "Other"]
+        };
+
+        const ALL_POSITIONS = Object.values(CONFIG.POSITIONS).flat();
+
+        // --- 2. STATE MANAGEMENT ---
+        let AppState = {
+            activeTab: 'dashboard',
+            scrollPos: 0,
+            filters: {
+                players: { gender: 'all', highlighted: false },
+                clubs: { sortBy: 'newest', position: 'all', budget: 'all', country: 'all', direct: false }
+            },
+            data: {
+                players: [],
+                clubs: [],
+                contacts: [],
+                reminders: [],
+                introMessage: "Hello, I am a FIFA Licensed Football Agent representing a selection of talented players. I am writing to you today to present a player who I believe could be a great fit for your club..."
+            }
+        };
+
+        // --- 3. DOM ELEMENT REFERENCES ---
+        const appContent = document.getElementById('app-content');
+        const navTabs = document.querySelectorAll('.nav-tab');
+        const addNewBtn = document.getElementById('add-new-btn');
+        const chooserModal = document.getElementById('add-new-chooser-modal');
+        const formModal = document.getElementById('form-modal');
+        const passwordModal = document.getElementById('password-modal');
+        const mainForm = document.getElementById('main-form');
+        const toast = document.getElementById('toast');
+        
+        let passwordConfirmCallback = null;
+
+        // --- 4. DATA PERSISTENCE (LocalStorage - Firebase would replace this) ---
+        
+        /**
+         * FIREBASE INTEGRATION POINT
+         * Replace these functions with calls to Firebase's Realtime Database or Firestore.
+         * For example, saveData() would become `set(ref(db, 'appData'), AppState.data)`.
+         * loadData() would use `onValue(ref(db, 'appData'), snapshot => { ... })`
+         * to listen for real-time updates.
+         */
+        const saveData = () => {
+            localStorage.setItem('sportTalentData', JSON.stringify(AppState.data));
+            showToast('Data saved!');
+        };
+
+        const loadData = () => {
+            const savedData = localStorage.getItem('sportTalentData');
+            if (savedData) {
+                AppState.data = JSON.parse(savedData);
+            } else {
+                // Pre-populate with sample data if nothing is saved
+                AppState.data = getSampleData();
+                saveData();
+            }
+        };
+
+        // --- 5. CORE RENDERING LOGIC ---
+        const render = () => {
+            // Save scroll position before re-rendering
+            AppState.scrollPos = window.scrollY;
+
+            // Clear previous content
+            appContent.innerHTML = '';
+            
+            // Render active tab
+            switch (AppState.activeTab) {
+                case 'dashboard':
+                    renderDashboard();
+                    break;
+                case 'players':
+                    renderPlayers();
+                    break;
+                case 'clubs':
+                    renderClubRequests();
+                    break;
+                case 'contacts':
+                    renderContacts();
+                    break;
+            }
+            
+            // Restore scroll position after rendering
+            window.scrollTo(0, AppState.scrollPos);
+        };
+
+        // --- 6. VIEW-SPECIFIC RENDERERS ---
+
+        const renderDashboard = () => {
+            const compatibleCombinations = findCompatibleCombinations();
+            appContent.innerHTML = `
+                <div class="dashboard-grid">
+                    <div class="dashboard-section">
+                        <h2>
+                            <span>Reminders</span>
+                            <button id="add-reminder-btn">+</button>
+                        </h2>
+                        <div id="reminders-list">
+                            ${AppState.data.reminders.length > 0 ? AppState.data.reminders.map(renderReminder).join('') : '<p class="no-content">No reminders yet.</p>'}
+                        </div>
+                    </div>
+
+                    <div class="dashboard-section">
+                        <h2>Compatible Combinations</h2>
+                        <div id="combinations-list">
+                            ${compatibleCombinations.length > 0 ? compatibleCombinations.map(renderCombination).join('') : '<p class="no-content">No compatible combinations found.</p>'}
+                        </div>
+                    </div>
+
+                    <div class="dashboard-section intro-message">
+                        <h2>My Intro Message</h2>
+                        <textarea id="intro-message-text">${AppState.data.introMessage}</textarea>
+                        <div class="actions">
+                            <button id="save-intro-btn" class="btn-save">Save</button>
+                            <button id="share-intro-btn" class="btn-share">Copy & Share</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+        
+        const renderReminder = (reminder, index) => `
+            <div class="reminder ${reminder.done ? 'done' : ''}">
+                <input type="checkbox" data-index="${index}" class="reminder-check" ${reminder.done ? 'checked' : ''}>
+                <label>${reminder.text}</label>
+            </div>
+        `;
+        
+        const renderCombination = (combo) => `
+            <div class="combination-card">
+                <h4>${combo.club.name} (${combo.club.country}) is looking for:</h4>
+                <p><strong>Positions:</strong> ${combo.club.positions.join(', ')}</p>
+                <p><strong>Budget:</strong> ${combo.club.budget}</p>
+                <hr>
+                ${combo.players.map(p => `
+                    <div class="player-match">
+                        <strong>Match:</strong> ${p.firstName} ${p.lastName} (${calculateAge(p.dob)}y, ${p.positions.join('/')})
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        const renderPlayers = () => {
+            const filters = AppState.filters.players;
+            let filteredPlayers = AppState.data.players;
+
+            if (filters.highlighted) {
+                filteredPlayers = filteredPlayers.filter(p => p.highlight);
+            }
+            if (filters.gender !== 'all') {
+                filteredPlayers = filteredPlayers.filter(p => p.gender.toLowerCase() === filters.gender);
+            }
+            
+            const groupedPlayers = groupAndSort(filteredPlayers, 'positionCategory', (a, b) => a.firstName.localeCompare(b.firstName));
+
+            appContent.innerHTML = `
+                <div class="filters">
+                    <div class="toggle-group">
+                        <button class="filter-btn-gender ${filters.gender === 'all' ? 'active' : ''}" data-value="all">All</button>
+                        <button class="filter-btn-gender ${filters.gender === 'men' ? 'active' : ''}" data-value="men">Men</button>
+                        <button class="filter-btn-gender ${filters.gender === 'women' ? 'active' : ''}" data-value="women">Women</button>
+                    </div>
+                    <div class="toggle-group">
+                         <button class="filter-btn-highlight ${filters.highlighted ? 'active' : ''}">Highlighted</button>
+                    </div>
+                </div>
+                <div id="player-list-content"></div>
+            `;
+            
+            const listContent = document.getElementById('player-list-content');
+            if(Object.keys(groupedPlayers).length > 0) {
+                 listContent.innerHTML = Object.keys(CONFIG.POSITIONS).map(category => {
+                    if (!groupedPlayers[category]) return '';
+                    return `
+                        <h2 class="group-header">${category}</h2>
+                        <div class="card-grid">
+                            ${groupedPlayers[category].map(player => renderCard(player, 'player')).join('')}
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                 listContent.innerHTML = `<p class="no-content">No players match the current filters.</p>`;
+            }
+        };
+
+        const renderClubRequests = () => {
+            const filters = AppState.filters.clubs;
+            let filteredClubs = [...AppState.data.clubs]; // Create a copy to sort
+            
+            // Filtering
+            if (filters.direct) {
+                filteredClubs = filteredClubs.filter(c => c.direct);
+            }
+            if (filters.position !== 'all') {
+                filteredClubs = filteredClubs.filter(c => c.positions.includes(filters.position));
+            }
+            if (filters.budget !== 'all') {
+                filteredClubs = filteredClubs.filter(c => c.budget === filters.budget);
+            }
+            if (filters.country !== 'all') {
+                filteredClubs = filteredClubs.filter(c => c.country === filters.country);
+            }
+
+            // Sorting
+            if (filters.sortBy === 'newest') {
+                filteredClubs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            }
+            
+            appContent.innerHTML = `
+                 <div class="filters">
+                    <select id="club-filter-sort">
+                        <option value="newest" ${filters.sortBy === 'newest' ? 'selected' : ''}>Newest</option>
+                    </select>
+                    <select id="club-filter-position">
+                        <option value="all">All Positions</option>
+                        ${ALL_POSITIONS.map(p => `<option value="${p}" ${filters.position === p ? 'selected' : ''}>${p}</option>`).join('')}
+                    </select>
+                    <select id="club-filter-budget">
+                        <option value="all">All Budgets</option>
+                        ${CONFIG.BUDGET_RANGES.map(b => `<option value="${b}" ${filters.budget === b ? 'selected' : ''}>${b}</option>`).join('')}
+                    </select>
+                     <select id="club-filter-country">
+                        <option value="all">All Countries</option>
+                        ${CONFIG.COUNTRIES.map(c => `<option value="${c}" ${filters.country === c ? 'selected' : ''}>${c}</option>`).join('')}
+                    </select>
+                    <button id="club-filter-direct" class="${filters.direct ? 'active-direct' : ''}">DIRECT</button>
+                </div>
+                <div class="card-grid">
+                    ${filteredClubs.length > 0 ? filteredClubs.map(club => renderCard(club, 'club')).join('') : '<p class="no-content">No club requests match filters.</p>'}
+                </div>
+            `;
+        };
+
+        const renderContacts = () => {
+             const groupedContacts = groupAndSort(AppState.data.contacts, 'role', (a, b) => a.lastName.localeCompare(b.lastName));
+
+            appContent.innerHTML = CONFIG.CONTACT_ROLES.map(role => {
+                if (!groupedContacts[role]) return '';
+                return `
+                    <h2 class="group-header">${role}s</h2>
+                    <div class="card-grid">
+                        ${groupedContacts[role].map(contact => renderCard(contact, 'contact')).join('')}
+                    </div>
+                `;
+            }).join('');
+            if (appContent.innerHTML.trim() === '') {
+                appContent.innerHTML = `<p class="no-content">No contacts found.</p>`;
+            }
+        };
+        
+        // Generic card renderer
+        const renderCard = (item, type) => {
+            let content = '';
+            switch (type) {
+                case 'player':
+                    content = `
+                        <div class="card-header">
+                            <h3>${item.firstName} ${item.lastName} ${item.highlight ? '&#9733;' : ''}</h3>
+                        </div>
+                        <div class="card-info">
+                           <strong>Position(s):</strong> ${item.positions.join(', ')}<br>
+                           <strong>Club:</strong> ${item.club || 'Free Agent'}<br>
+                           <strong>Age:</strong> ${calculateAge(item.dob)} (DOB: ${item.dob})
+                        </div>
+                    `;
+                    break;
+                case 'club':
+                    content = `
+                        <div class="card-header">
+                            <h3>${item.name} ${item.direct ? '<span style="color:var(--success-color); font-size: 0.8em;">(DIRECT)</span>' : ''}</h3>
+                        </div>
+                         <div class="card-info">
+                           <strong>Country:</strong> ${item.country}<br>
+                           <strong>Positions Needed:</strong> ${item.positions.join(', ')}<br>
+                           <strong>Budget:</strong> ${item.budget}
+                        </div>
+                    `;
+                    break;
+                case 'contact':
+                    content = `
+                        <div class="card-header">
+                            <h3>${item.firstName} ${item.lastName}</h3>
+                        </div>
+                        <div class="card-info">
+                           <strong>Role:</strong> ${item.role}<br>
+                           <strong>Club:</strong> ${item.club || 'Without a Club'}
+                        </div>
+                    `;
+                    break;
+            }
+            
+            return `
+                <div class="card">
+                    ${content}
+                    <div class="card-actions">
+                        <button class="btn-edit" data-type="${type}" data-id="${item.id}">Edit</button>
+                        <button class="btn-delete" data-type="${type}" data-id="${item.id}">Delete</button>
+                    </div>
+                </div>
+            `;
+        };
+        
+        // --- 7. MODAL & FORM LOGIC ---
+        
+        const openModal = (type, id = null) => {
+            const isEditing = id !== null;
+            let item = {};
+            let title = '';
+            
+            mainForm.innerHTML = ''; // Clear previous form
+            mainForm.dataset.type = type;
+            mainForm.dataset.id = id;
+            
+            switch (type) {
+                case 'player':
+                    title = isEditing ? 'Edit Player' : 'Add Player';
+                    if (isEditing) item = AppState.data.players.find(p => p.id === id);
+                    mainForm.innerHTML = getPlayerFormHtml(item);
+                    // Add listener for gender change
+                    mainForm.querySelector('#player-gender').addEventListener('change', (e) => {
+                        if (e.target.value === 'Female') {
+                            mainForm.querySelector('#player-highlight').checked = true;
+                        }
+                    });
+                    break;
+                case 'club':
+                    title = isEditing ? 'Edit Club Request' : 'Add Club Request';
+                    if (isEditing) item = AppState.data.clubs.find(c => c.id === id);
+                    mainForm.innerHTML = getClubFormHtml(item);
+                    break;
+                case 'contact':
+                    title = isEditing ? 'Edit Contact' : 'Add Contact';
+                    if (isEditing) item = AppState.data.contacts.find(c => c.id === id);
+                    mainForm.innerHTML = getContactFormHtml(item);
+                    // Add listener for checkbox
+                     mainForm.querySelector('#contact-no-club').addEventListener('change', (e) => {
+                        mainForm.querySelector('#contact-club').disabled = e.target.checked;
+                     });
+                    break;
+                case 'reminder':
+                    title = 'Add Reminder';
+                    mainForm.innerHTML = getReminderFormHtml();
+                    break;
+            }
+            
+            document.getElementById('modal-title').textContent = title;
+            formModal.classList.add('visible');
+        };
+        
+        const closeModal = (modal) => {
+            modal.classList.remove('visible');
+        };
+
+        const handleFormSubmit = (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            const type = e.target.dataset.type;
+            const id = e.target.dataset.id;
+
+            try {
+                switch (type) {
+                    case 'player':
+                        const playerData = {
+                            id: id || generateId(),
+                            firstName: data.firstName,
+                            lastName: data.lastName,
+                            gender: data.gender,
+                            dob: data.dob,
+                            club: data.club,
+                            positions: formData.getAll('positions'),
+                            positionCategory: getPositionCategory(formData.getAll('positions')[0]),
+                            salary: data.salary,
+                            cvLink: data.cvLink,
+                            videos: [data.video1, data.video2, data.video3].filter(v => v),
+                            highlight: data.highlight === 'on',
+                        };
+                        updateOrAddItem(playerData, 'players');
+                        break;
+                    case 'club':
+                        const clubData = {
+                           id: id || generateId(),
+                           createdAt: id ? AppState.data.clubs.find(c=>c.id===id).createdAt : new Date().toISOString(),
+                           name: data.name,
+                           country: data.country,
+                           positions: formData.getAll('positions'),
+                           budget: data.budget,
+                           direct: data.direct === 'on'
+                        };
+                        updateOrAddItem(clubData, 'clubs');
+                        break;
+                    case 'contact':
+                         const contactData = {
+                           id: id || generateId(),
+                           firstName: data.firstName,
+                           lastName: data.lastName,
+                           role: data.role,
+                           club: data.noClub === 'on' ? '' : data.club,
+                           phone: data.phone,
+                           email: data.email,
+                           connection: data.connection
+                        };
+                        updateOrAddItem(contactData, 'contacts');
+                        break;
+                    case 'reminder':
+                        AppState.data.reminders.push({ text: data.text, done: false });
+                        break;
+                }
+                
+                saveData();
+                render(); // Re-render the UI with new data
+                closeModal(formModal);
+            } catch (error) {
+                console.error("Form submission error:", error);
+                alert("Error saving data: " + error.message);
+            }
+        };
+
+        // --- 8. HTML GENERATORS FOR FORMS ---
+        const getPlayerFormHtml = (p = {}) => `
+            <div class="form-group">
+                <label for="player-firstname">First Name</label>
+                <input type="text" id="player-firstname" name="firstName" value="${p.firstName || ''}" required>
+            </div>
+            <div class="form-group">
+                <label for="player-lastname">Last Name</label>
+                <input type="text" id="player-lastname" name="lastName" value="${p.lastName || ''}" required>
+            </div>
+            <div class="form-group">
+                <label for="player-gender">Gender</label>
+                <select id="player-gender" name="gender" required>
+                    <option value="Male" ${p.gender === 'Male' ? 'selected' : ''}>Male</option>
+                    <option value="Female" ${p.gender === 'Female' ? 'selected' : ''}>Female</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="player-dob">Date of Birth</label>
+                <input type="date" id="player-dob" name="dob" value="${p.dob || ''}" required>
+            </div>
+            <div class="form-group">
+                <label for="player-club">Current Club</label>
+                <input type="text" id="player-club" name="club" value="${p.club || ''}" placeholder="Enter club or leave blank for Free Agent">
+            </div>
+            <div class="form-group">
+                <label for="player-positions">Position(s)</label>
+                <select id="player-positions" name="positions" multiple required>
+                    ${ALL_POSITIONS.map(pos => `<option value="${pos}" ${(p.positions || []).includes(pos) ? 'selected' : ''}>${pos}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="player-salary">Salary Expectation</label>
+                <select id="player-salary" name="salary" required>
+                    ${CONFIG.SALARY_RANGES.map(s => `<option value="${s}" ${p.salary === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="player-cv">CV Link (Transfermarkt, etc.)</label>
+                <input type="text" id="player-cv" name="cvLink" value="${p.cvLink || ''}">
+            </div>
+            <div class="form-group">
+                <label>Video Links</label>
+                <input type="text" name="video1" placeholder="Video Link 1" value="${(p.videos || [])[0] || ''}">
+                <input type="text" name="video2" placeholder="Video Link 2" value="${(p.videos || [])[1] || ''}" style="margin-top:0.5rem">
+                <input type="text" name="video3" placeholder="Video Link 3" value="${(p.videos || [])[2] || ''}" style="margin-top:0.5rem">
+            </div>
+             <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="player-highlight" name="highlight" ${p.highlight ? 'checked' : ''}>
+                    <label for="player-highlight">Highlight Player</label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel close-modal-btn">Cancel</button>
+                <button type="submit" class="btn-submit">Save Player</button>
+            </div>
+        `;
+        
+        const getClubFormHtml = (c = {}) => `
+            <div class="form-group">
+                <label for="club-name">Club Name</label>
+                <input type="text" id="club-name" name="name" value="${c.name || ''}" required>
+            </div>
+            <div class="form-group">
+                <label for="club-country">Country</label>
+                <select id="club-country" name="country" required>
+                     ${CONFIG.COUNTRIES.map(country => `<option value="${country}" ${c.country === country ? 'selected' : ''}>${country}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="club-positions">Positions Needed</label>
+                <select id="club-positions" name="positions" multiple required>
+                    ${ALL_POSITIONS.map(pos => `<option value="${pos}" ${(c.positions || []).includes(pos) ? 'selected' : ''}>${pos}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="club-budget">Budget</label>
+                <select id="club-budget" name="budget" required>
+                     ${CONFIG.BUDGET_RANGES.map(b => `<option value="${b}" ${c.budget === b ? 'selected' : ''}>${b}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="club-direct" name="direct" ${c.direct ? 'checked' : ''}>
+                    <label for="club-direct">DIRECT Request</label>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel close-modal-btn">Cancel</button>
+                <button type="submit" class="btn-submit">Save Request</button>
+            </div>
+        `;
+        
+        const getContactFormHtml = (c = {}) => `
+            <div class="form-group">
+                <label for="contact-firstname">First Name</label>
+                <input type="text" id="contact-firstname" name="firstName" value="${c.firstName || ''}" required>
+            </div>
+            <div class="form-group">
+                <label for="contact-lastname">Last Name</label>
+                <input type="text" id="contact-lastname" name="lastName" value="${c.lastName || ''}" required>
+            </div>
+            <div class="form-group">
+                <label for="contact-role">Role</label>
+                <select id="contact-role" name="role" required>
+                    ${CONFIG.CONTACT_ROLES.map(r => `<option value="${r}" ${c.role === r ? 'selected' : ''}>${r}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="contact-club">Club</label>
+                <input type="text" id="contact-club" name="club" value="${c.club || ''}" ${!c.club && c.club !== undefined ? 'disabled' : ''}>
+                <div class="checkbox-group" style="margin-top: 0.5rem">
+                    <input type="checkbox" id="contact-no-club" name="noClub" ${!c.club && c.club !== undefined ? 'checked' : ''}>
+                    <label for="contact-no-club">Without a Club</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="contact-phone">Phone Number</label>
+                <input type="tel" id="contact-phone" name="phone" value="${c.phone || ''}">
+            </div>
+            <div class="form-group">
+                <label for="contact-email">Email</label>
+                <input type="email" id="contact-email" name="email" value="${c.email || ''}">
+            </div>
+            <div class="form-group">
+                <label for="contact-connection">Connection (LinkedIn, WhatsApp)</label>
+                <input type="text" id="contact-connection" name="connection" value="${c.connection || ''}">
+            </div>
+             <div class="modal-actions">
+                <button type="button" class="btn-cancel close-modal-btn">Cancel</button>
+                <button type="submit" class="btn-submit">Save Contact</button>
+            </div>
+        `;
+        
+        const getReminderFormHtml = () => `
+            <div class="form-group">
+                <label for="reminder-text">Reminder Text</label>
+                <input type="text" id="reminder-text" name="text" required>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel close-modal-btn">Cancel</button>
+                <button type="submit" class="btn-submit">Add Reminder</button>
+            </div>
+        `;
+        
+        // --- 9. EVENT LISTENERS ---
+        const setupEventListeners = () => {
+            // Navigation
+            document.querySelector('nav').addEventListener('click', (e) => {
+                if (e.target.matches('.nav-tab')) {
+                    AppState.activeTab = e.target.dataset.tab;
+                    navTabs.forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    render();
+                }
+            });
+            
+            // Add New Button & Chooser Modal
+            addNewBtn.addEventListener('click', () => chooserModal.classList.add('visible'));
+            chooserModal.addEventListener('click', (e) => {
+                if (e.target.matches('.close-modal-btn') || e.target === chooserModal) {
+                    closeModal(chooserModal);
+                } else if (e.target.dataset.type) {
+                    closeModal(chooserModal);
+                    openModal(e.target.dataset.type);
+                }
+            });
+
+            // Main form submission
+            mainForm.addEventListener('submit', handleFormSubmit);
+
+            // Close buttons for modals
+            document.querySelectorAll('.close-modal-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    closeModal(e.target.closest('.modal-overlay'));
+                });
+            });
+
+            // Clicking outside modal to close
+            document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                overlay.addEventListener('click', (e) => {
+                    if (e.target === overlay) {
+                        closeModal(overlay);
+                    }
+                });
+            });
+
+            // Dynamic event listeners for content rendered by JS
+            appContent.addEventListener('click', handleAppContentClick);
+            
+            // Password confirmation
+            document.getElementById('password-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const passwordInput = document.getElementById('password-input');
+                if (passwordInput.value === CONFIG.PASSWORD) {
+                    if (passwordConfirmCallback) {
+                        passwordConfirmCallback();
+                        passwordConfirmCallback = null;
+                    }
+                    closeModal(passwordModal);
+                    passwordInput.value = '';
+                } else {
+                    alert('Incorrect password. Please try again.');
+                    passwordInput.value = '';
+                }
+            });
+        };
+
+        const handleAppContentClick = (e) => {
+            const target = e.target;
+            
+            // Edit/Delete buttons
+            if (target.matches('.btn-edit')) {
+                openModal(target.dataset.type, target.dataset.id);
+            } else if (target.matches('.btn-delete')) {
+                 confirmWithPassword(() => {
+                    deleteItem(target.dataset.type, target.dataset.id);
+                    saveData();
+                    render();
+                });
+            }
+            // Dashboard actions
+            else if(target.id === 'add-reminder-btn') {
+                 openModal('reminder');
+            } else if (target.matches('.reminder-check')) {
+                const index = parseInt(target.dataset.index, 10);
+                AppState.data.reminders[index].done = target.checked;
+                saveData();
+                render();
+            } else if (target.id === 'save-intro-btn') {
+                AppState.data.introMessage = document.getElementById('intro-message-text').value;
+                saveData();
+            } else if (target.id === 'share-intro-btn') {
+                const textToCopy = document.getElementById('intro-message-text').value;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showToast('Message copied to clipboard!');
+                }, () => {
+                    showToast('Failed to copy message.');
+                });
+            }
+            // Player List Filters
+            else if (target.matches('.filter-btn-gender')) {
+                AppState.filters.players.gender = target.dataset.value;
+                render();
+            } else if (target.matches('.filter-btn-highlight')) {
+                 AppState.filters.players.highlighted = !AppState.filters.players.highlighted;
+                 render();
+            }
+            // Club Request Filters
+            else if (target.matches('#club-filter-sort, #club-filter-position, #club-filter-budget, #club-filter-country')) {
+                const filters = AppState.filters.clubs;
+                filters.sortBy = document.getElementById('club-filter-sort').value;
+                filters.position = document.getElementById('club-filter-position').value;
+                filters.budget = document.getElementById('club-filter-budget').value;
+                filters.country = document.getElementById('club-filter-country').value;
+                render();
+            } else if (target.matches('#club-filter-direct')) {
+                AppState.filters.clubs.direct = !AppState.filters.clubs.direct;
+                render();
+            }
+        };
+
+        // --- 10. UTILITY & HELPER FUNCTIONS ---
+        const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+        
+        const calculateAge = (dobString) => {
+            if (!dobString) return 'N/A';
+            const birthDate = new Date(dobString);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            return age;
+        };
+
+        const getPositionCategory = (position) => {
+            for (const category in CONFIG.POSITIONS) {
+                if (CONFIG.POSITIONS[category].includes(position)) {
+                    return category;
+                }
+            }
+            return 'Other';
+        };
+
+        const groupAndSort = (items, groupKey, sortFn) => {
+            const grouped = items.reduce((acc, item) => {
+                const key = item[groupKey];
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(item);
+                return acc;
+            }, {});
+            
+            for (const key in grouped) {
+                grouped[key].sort(sortFn);
+            }
+            
+            return grouped;
+        };
+        
+        const updateOrAddItem = (item, collectionName) => {
+            const collection = AppState.data[collectionName];
+            const index = collection.findIndex(i => i.id === item.id);
+            if (index > -1) {
+                collection[index] = item; // Update existing
+            } else {
+                collection.push(item); // Add new
+            }
+        };
+        
+        const deleteItem = (type, id) => {
+            const collectionName = `${type}s`;
+            AppState.data[collectionName] = AppState.data[collectionName].filter(item => item.id !== id);
+        };
+        
+        const confirmWithPassword = (callback) => {
+            passwordConfirmCallback = callback;
+            passwordModal.classList.add('visible');
+            document.getElementById('password-input').focus();
+        };
+        
+        const showToast = (message) => {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        };
+        
+        // --- 11. CORE BUSINESS LOGIC ---
+        const findCompatibleCombinations = () => {
+            const matches = [];
+            const sortedClubs = [...AppState.data.clubs].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            sortedClubs.forEach(club => {
+                const clubBudgetIndex = CONFIG.BUDGET_RANGES.indexOf(club.budget);
+                const matchedPlayers = [];
+
+                AppState.data.players.forEach(player => {
+                    const hasPositionMatch = player.positions.some(pPos => club.positions.includes(pPos));
+                    if (!hasPositionMatch) return;
+                    
+                    const playerSalaryIndex = CONFIG.SALARY_RANGES.indexOf(player.salary);
+                    // Match if player salary is less than or equal to club budget
+                    // or if budget is 'Flexible'
+                    if (club.budget === "Flexible" || playerSalaryIndex <= clubBudgetIndex) {
+                        matchedPlayers.push(player);
+                    }
+                });
+
+                if (matchedPlayers.length > 0) {
+                    matches.push({ club: club, players: matchedPlayers });
+                }
+            });
+
+            return matches;
+        };
+
+        // --- 12. INITIALIZATION ---
+        const init = () => {
+            loadData();
+            setupEventListeners();
+            render();
+        };
+        
+        const getSampleData = () => ({
+            players: [
+                { id: generateId(), firstName: "Leon", lastName: "Goretzka", gender: "Male", dob: "1995-02-06", club: "Bayern Munich", positions: ["Central Midfielder (CM)", "Attacking Midfielder (AM)"], positionCategory: "Midfielders", salary: "> €40k/month", cvLink: "https://www.transfermarkt.com/leon-goretzka/profil/spieler/153084", videos: [], highlight: true },
+                { id: generateId(), firstName: "Alessia", lastName: "Russo", gender: "Female", dob: "1999-02-08", club: "Arsenal WFC", positions: ["Striker (ST)"], positionCategory: "Forwards", salary: "€10k - €20k/month", cvLink: "https://www.transfermarkt.com/alessia-russo/profil/spieler/340845", videos: [], highlight: true },
+                { id: generateId(), firstName: "David", lastName: "Alaba", gender: "Male", dob: "1992-06-24", club: "Real Madrid", positions: ["Centre-Back (CB)", "Left-Back (LB)"], positionCategory: "Defenders", salary: "€20k - €40k/month", cvLink: "", videos: [], highlight: false },
+                 { id: generateId(), firstName: "Manuel", lastName: "Neuer", gender: "Male", dob: "1986-03-27", club: "Bayern Munich", positions: ["Goalkeeper (GK)"], positionCategory: "Goalkeepers", salary: "> €40k/month", cvLink: "", videos: [], highlight: false },
+            ],
+            clubs: [
+                { id: generateId(), createdAt: new Date().toISOString(), name: "Manchester United", country: "England", positions: ["Striker (ST)", "Central Midfielder (CM)"], budget: "> €40k/month", direct: true },
+                { id: generateId(), createdAt: "2024-05-10T10:00:00Z", name: "Borussia Dortmund", country: "Germany", positions: ["Centre-Back (CB)"], budget: "€20k - €40k/month", direct: false }
+            ],
+            contacts: [
+                { id: generateId(), firstName: "Pep", lastName: "Guardiola", role: "Coach", club: "Manchester City", phone: "", email: "", connection: "" },
+                { id: generateId(), firstName: "Fabrizio", lastName: "Romano", role: "Other", club: "", phone: "", email: "", connection: "" }
+            ],
+            reminders: [
+                { text: "Follow up with AC Milan about the winger", done: false },
+                { text: "Send player profile to scout", done: true }
+            ],
+            introMessage: "Dear Sporting Director,\n\nMy name is Zoran Veljanovski (FIFA ID: 202405-6005), and I am a licensed FIFA Football Agent. I am reaching out to introduce a player who I believe possesses the qualities to significantly strengthen your squad.\n\nPlease let me know if you are open to receiving more details, including video highlights and a full performance report.\n\nBest regards,\nZoran Veljanovski"
+        });
+
+        init(); // Start the application
+    });
+    </script>
+</body>
+</html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -366,3 +1740,4 @@
     </script>
 </body>
 </html>
+
