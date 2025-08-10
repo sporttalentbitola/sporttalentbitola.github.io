@@ -3,1255 +3,313 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPORT TALENT - Agent Management</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>FIFA Agent Player Management</title>
+    
     <style>
-        /* --- 1. General & Theming --- */
-        :root {
-            --primary-bg: #f4f7fc;
-            --secondary-bg: #ffffff;
-            --header-bg: #1a202c;
-            --primary-text: #2d3748;
-            --secondary-text: #718096;
-            --accent-color: #4299e1;
-            --accent-hover: #2b6cb0;
-            --border-color: #e2e8f0;
-            --danger-color: #e53e3e;
-            --success-color: #48bb78;
-            --highlight-color: #f6ad55;
-            --male-bg: #f0f9ff;
-            --female-bg: #fdf2f8;
-            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
-
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--primary-bg);
-            color: var(--primary-text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             line-height: 1.6;
-            font-size: 16px;
-        }
-
-        /* --- 2. Layout & Core Components --- */
-        #app-container {
-            max-width: 1200px;
             margin: 0 auto;
-            padding-bottom: 100px; /* Space for FAB */
+            max-width: 1000px;
+            padding: 2em;
+            background-color: #f4f7f6;
+            color: #333;
         }
-
-        header {
-            background-color: var(--header-bg);
-            color: white;
-            padding: 1rem 1.5rem;
+        h1, h2 {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            color: #1a1a1a;
+            border-bottom: 3px solid #00a86b; /* A 'pitch' green */
+            padding-bottom: 10px;
+            margin-top: 1.5em;
+        }
+        h1 {
             text-align: center;
+            font-size: 2.5em;
+            border-bottom: none;
         }
-
-        header h1 {
-            font-weight: 700;
-            font-size: 1.75rem;
-            letter-spacing: 1px;
-        }
-
-        nav {
-            display: flex;
-            background-color: var(--secondary-bg);
-            box-shadow: var(--card-shadow);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        nav button {
-            flex-grow: 1;
-            padding: 0.8rem 0.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            font-family: 'Poppins', sans-serif;
-            background: none;
+        hr {
             border: none;
-            border-bottom: 3px solid transparent;
-            color: var(--secondary-text);
-            cursor: pointer;
-            transition: color 0.2s ease, border-color 0.2s ease;
+            height: 1px;
+            background-color: #ddd;
+            margin: 2em 0;
         }
-
-        nav button:hover {
-            color: var(--primary-text);
-        }
-
-        nav button.active {
-            color: var(--accent-color);
-            border-bottom-color: var(--accent-color);
-        }
-
-        main {
-            padding: 1.5rem;
-        }
-        
-        .filters {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            background-color: var(--secondary-bg);
+        /* Management Tool Section */
+        .management-tool {
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
             border-radius: 8px;
-            box-shadow: var(--card-shadow);
-            position: relative; /* Fix for dropdown z-index */
-            z-index: 50;       /* Fix for dropdown z-index */
+            padding: 1.5em 2em;
+            margin-top: 2em;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
         }
-        
-        .filters .toggle-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .filters button, .filters select {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            background-color: #fff;
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-        }
-        
-        .filters button.active {
-            background-color: var(--accent-color);
-            color: white;
-            border-color: var(--accent-color);
-        }
-        
-        .filters button.active-direct {
-             background-color: var(--success-color);
-             border-color: var(--success-color);
-             color: white;
-        }
-
-        .group-header {
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--primary-text);
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid var(--border-color);
-        }
-        
-        .card-grid {
+        .form-grid {
             display: grid;
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1em;
         }
-        
-        @media (min-width: 768px) {
-            .card-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (min-width: 1024px) {
-            .card-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-
-        .card {
-            background-color: var(--secondary-bg);
-            border-radius: 8px;
-            box-shadow: var(--card-shadow);
-            padding: 1.25rem;
+        .form-group {
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
-            border-left: 5px solid transparent;
-            transition: border-color 0.3s;
         }
-
-        .card.player-card.highlighted {
-            border-left-color: var(--highlight-color);
-        }
-        .card.player-card.male {
-            background-color: var(--male-bg);
-        }
-        .card.player-card.female {
-            background-color: var(--female-bg);
-        }
-        
-        .card-header h3 {
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        
-        .card-info {
-            font-size: 0.95rem;
-            color: var(--secondary-text);
-            flex-grow: 1;
-        }
-        
-        .card-info strong {
-            color: var(--primary-text);
-        }
-
-        .card-actions {
-            margin-top: auto;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            justify-content: flex-end;
-        }
-        
-        .card-actions button {
-            padding: 0.4rem 0.8rem;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: opacity 0.2s ease;
-        }
-
-        .card-actions button:hover {
-            opacity: 0.8;
-        }
-
-        .btn-view { background-color: var(--accent-color); color: white; }
-        .btn-edit { background-color: var(--highlight-color); color: white; }
-        .btn-delete { background-color: var(--danger-color); color: white; }
-
-        /* --- 3. Dashboard Specific --- */
-        .dashboard-grid {
-            display: grid;
-            gap: 1.5rem;
-            grid-template-columns: 1fr;
-        }
-        
-        @media (min-width: 1024px) {
-            .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
-            .dashboard-section.intro-message { grid-column: 1 / -1; }
-        }
-
-        .dashboard-section {
-            background-color: var(--secondary-bg);
-            border-radius: 8px;
-            box-shadow: var(--card-shadow);
-            padding: 1.5rem;
-        }
-
-        .dashboard-section h2 {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        
-        .dashboard-section h2 button {
-             padding: 0.3rem 0.6rem;
-             font-size: 0.8rem;
-             border-radius: 5px;
-             border: none;
-             background-color: var(--accent-color);
-             color: white;
-             cursor: pointer;
-        }
-        
-        .reminder {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.5rem 0;
-        }
-        .reminder input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        .reminder label {
-             flex-grow: 1;
-        }
-        .reminder.done label {
-            text-decoration: line-through;
-            color: var(--secondary-text);
-        }
-        .btn-delete-reminder {
-            background: none;
-            border: none;
-            color: var(--danger-color);
-            cursor: pointer;
-            font-size: 1.2rem;
+        .management-tool label {
+            margin-bottom: 0.5em;
             font-weight: bold;
-            padding: 0 0.5rem;
+            font-size: 0.9em;
         }
-
-        .intro-message textarea {
-            width: 100%;
-            min-height: 150px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 0.75rem;
-            font-family: 'Poppins', sans-serif;
-            font-size: 1rem;
-            resize: vertical;
+        .management-tool input, .management-tool select {
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1em;
         }
-        
-        .intro-message .actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-        }
-        
-        .intro-message .actions button {
-            padding: 0.6rem 1rem;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        .btn-save { background-color: var(--success-color); color: white; }
-        .btn-share { background-color: var(--accent-color); color: white; }
-        
-        .combination-card {
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        .combination-card h4 { color: var(--accent-color); }
-        .combination-card .player-match { margin-top: 0.5rem; padding-left: 1rem; }
-        .no-content { text-align: center; color: var(--secondary-text); padding: 2rem; }
-
-        /* --- 4. Floating Action Button --- */
-        #add-new-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background-color: var(--accent-color);
+        .management-tool button {
+            background-color: #007bff;
             color: white;
+            padding: 12px 15px;
             border: none;
-            border-radius: 50%;
-            font-size: 2.5rem;
-            font-weight: 300;
-            line-height: 60px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 1em;
+            transition: background-color 0.2s;
+        }
+        .management-tool button:hover {
+            background-color: #0056b3;
+        }
+        /* Roster and Summary Section */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1em;
+            margin: 2em 0;
             text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            cursor: pointer;
-            z-index: 1000;
-            transition: background-color 0.2s, transform 0.2s;
         }
-
-        #add-new-btn:hover {
-            background-color: var(--accent-hover);
-            transform: scale(1.05);
-        }
-
-        /* --- 5. Modals --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            padding: 1rem;
-            visibility: hidden;
-            opacity: 0;
-            transition: visibility 0s 0.3s, opacity 0.3s ease;
-        }
-
-        .modal-overlay.visible {
-            visibility: visible;
-            opacity: 1;
-            transition: visibility 0s, opacity 0.3s ease;
-        }
-
-        .modal {
-            background-color: var(--secondary-bg);
-            padding: 2rem;
+        .stat-card {
+            background-color: #e9ecef;
+            padding: 1.5em;
             border-radius: 8px;
+        }
+        .stat-card h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        .stat-card p {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 0;
+        }
+        table {
             width: 100%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            transform: scale(0.95);
-            transition: transform 0.3s ease;
+            border-collapse: collapse;
+            margin-top: 2em;
         }
-        
-        .modal-overlay.visible .modal {
-            transform: scale(1);
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
         }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
+        thead {
+            background-color: #343a40;
+            color: white;
         }
-
-        .modal-header h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
         }
-
-        .close-modal-btn {
-            background: none;
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
             border: none;
-            font-size: 2rem;
-            font-weight: 300;
-            cursor: pointer;
-            color: var(--secondary-text);
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-group input[type="text"],
-        .form-group input[type="email"],
-        .form-group input[type="tel"],
-        .form-group input[type="url"],
-        .form-group input[type="date"],
-        .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 1rem;
-        }
-        
-        .form-group select[multiple] {
-            height: 120px;
-        }
-
-        .form-group .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .form-group .checkbox-group input {
-            width: 18px;
-            height: 18px;
-        }
-        
-        .view-modal-content p {
-            margin-bottom: 0.75rem;
-        }
-        .view-modal-content a {
-            color: var(--accent-color);
-            text-decoration: none;
-        }
-        .view-modal-content a:hover {
-            text-decoration: underline;
-        }
-
-        .modal-actions {
-            margin-top: 1.5rem;
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-        }
-
-        .modal-actions button {
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            border: none;
-            font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 4px;
             cursor: pointer;
         }
-        
-        .btn-cancel {
-            background-color: var(--secondary-text);
-            color: white;
-        }
-        
-        .btn-submit {
-            background-color: var(--accent-color);
-            color: white;
-        }
-        
-        /* Utility Classes */
-        #toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--header-bg);
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            z-index: 3000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-        }
-        
-        #toast.show {
-            opacity: 1;
-            visibility: visible;
+        .delete-btn:hover {
+            background-color: #c82333;
         }
     </style>
 </head>
 <body>
-    <div id="app-container">
-        <header>
-            <h1>SPORT TALENT</h1>
-        </header>
 
-        <nav>
-            <button data-tab="dashboard" class="nav-tab active">Dashboard</button>
-            <button data-tab="players" class="nav-tab">Player List</button>
-            <button data-tab="clubs" class="nav-tab">Club Requests</button>
-            <button data-tab="contacts" class="nav-tab">Contacts</button>
-        </nav>
+    <h1>⚽ FIFA Agent Management Dashboard</h1>
+    <p style="text-align:center;">Your central hub for managing your roster of professional football players.</p>
 
-        <main id="app-content">
-            </main>
-    </div>
+    <hr>
 
-    <button id="add-new-btn">+</button>
-    <div id="toast"></div>
-
-    <div id="add-new-chooser-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Add New...</h2>
-                <button class="close-modal-btn">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>What would you like to add?</p>
-                <div class="modal-actions" style="justify-content: center; flex-wrap: wrap;">
-                    <button class="btn-submit" data-type="player">Player</button>
-                    <button class="btn-submit" data-type="club">Club Request</button>
-                    <button class="btn-submit" data-type="contact">Contact</button>
-                    <button class="btn-submit" data-type="reminder">Reminder</button>
+    <div class="management-tool">
+        <h2>Add New Player</h2>
+        <form id="add-player-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="playerName">Player Name</label>
+                    <input type="text" id="playerName" placeholder="e.g., Leo Messi" required>
+                </div>
+                <div class="form-group">
+                    <label for="playerAge">Age</label>
+                    <input type="number" id="playerAge" placeholder="38" required>
+                </div>
+                <div class="form-group">
+                    <label for="playerPosition">Position</label>
+                    <select id="playerPosition" required>
+                        <option value="Forward">Forward</option>
+                        <option value="Midfielder">Midfielder</option>
+                        <option value="Defender">Defender</option>
+                        <option value="Goalkeeper">Goalkeeper</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="playerClub">Club</label>
+                    <input type="text" id="playerClub" placeholder="e.g., Inter Miami" required>
+                </div>
+                <div class="form-group">
+                    <label for="marketValue">Market Value (€)</label>
+                    <input type="number" id="marketValue" placeholder="35000000" required>
+                </div>
+                <div class="form-group">
+                    <label for="agentCommission">Agent Commission (%)</label>
+                    <input type="number" id="agentCommission" placeholder="10" step="0.1" required>
                 </div>
             </div>
-        </div>
+            <button type="submit">Add Player to Roster</button>
+        </form>
     </div>
 
-    <div id="form-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2 id="modal-title">Add/Edit Profile</h2>
-                <button class="close-modal-btn">&times;</button>
-            </div>
-            <form id="main-form">
-                </form>
+    <hr>
+    
+    <h2>Dashboard Summary</h2>
+    <div id="summary-stats" class="summary-stats">
+        <div class="stat-card">
+            <h3>Total Players</h3>
+            <p id="total-players">0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Market Value</h3>
+            <p id="total-value">€0</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Potential Commission</h3>
+            <p id="total-commission">€0</p>
         </div>
     </div>
     
-    <div id="view-modal" class="modal-overlay">
-        <div class="modal">
-             <div class="modal-header">
-                <h2 id="view-modal-title">Player Profile</h2>
-                <button class="close-modal-btn">&times;</button>
-            </div>
-            <div id="view-modal-content" class="view-modal-content">
-                </div>
-            <div class="modal-actions">
-                 <button id="copy-details-btn" class="btn-submit">Copy Details for Sharing</button>
-            </div>
-        </div>
+    <h2>Player Roster</h2>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Age</th>
+                    <th>Position</th>
+                    <th>Club</th>
+                    <th>Market Value (€)</th>
+                    <th>Commission</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="player-table-body">
+                </tbody>
+        </table>
     </div>
 
-    <div id="password-modal" class="modal-overlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Confirm Action</h2>
-                <button class="close-modal-btn">&times;</button>
-            </div>
-            <p>Please enter the password to confirm this action.</p>
-            <form id="password-form">
-                <div class="form-group">
-                    <label for="password-input">Password</label>
-                    <input type="password" id="password-input" required>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel close-modal-btn">Cancel</button>
-                    <button type="submit" class="btn-submit">Confirm</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- 1. CONFIGURATION & CONSTANTS ---
-        
-        // The password for confirming deletions can be changed here.
-        const MASTER_PASSWORD = 'admin123';
+<script>
+    // In-memory array to store player data
+    let players = [];
 
-        const CONFIG = {
-            POSITIONS: {
-                Goalkeepers: ["Goalkeeper (GK)"],
-                Defenders: ["Centre-Back (CB)", "Right-Back (RB)", "Left-Back (LB)", "Wing-Back (RWB/LWB)"],
-                Midfielders: ["Defensive Midfielder (DM)", "Central Midfielder (CM)", "Attacking Midfielder (AM)", "Right Midfielder (RM)", "Left Midfielder (LM)"],
-                Forwards: ["Winger (RW/LW)", "Striker (ST)", "Centre-Forward (CF)"]
-            },
-            SALARY_RANGES: ["< €5k/month", "€5k - €10k/month", "€10k - €20k/month", "€20k - €40k/month", "> €40k/month"],
-            BUDGET_RANGES: ["< €5k/month", "€5k - €10k/month", "€10k - €20k/month", "€20k - €40k/month", "> €40k/month", "Flexible"],
-            CONTACT_ROLES: ["Coach", "Sporting Director", "Scout", "President", "Agent", "Other"],
-            LEAGUE_GENDERS: ["Male", "Female"],
-            COUNTRIES: ["Germany", "Spain", "Italy", "England", "France", "Portugal", "Netherlands", "USA", "Brazil", "Argentina", "Other"]
-        };
+    // DOM Elements
+    const form = document.getElementById('add-player-form');
+    const tableBody = document.getElementById('player-table-body');
+    const totalPlayersEl = document.getElementById('total-players');
+    const totalValueEl = document.getElementById('total-value');
+    const totalCommissionEl = document.getElementById('total-commission');
 
-        const ALL_POSITIONS = Object.values(CONFIG.POSITIONS).flat();
+    // Event Listener for the form submission
+    form.addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent page reload
 
-        // --- 2. STATE MANAGEMENT ---
-        let AppState = {
-            activeTab: 'dashboard',
-            scrollPos: 0,
-            filters: {
-                players: { gender: 'all', highlighted: false },
-                clubs: { sortBy: 'newest', position: 'all', budget: 'all', country: 'all', direct: false }
-            },
-            data: {
-                players: [],
-                clubs: [],
-                contacts: [],
-                reminders: [],
-                introMessage: ""
-            }
-        };
-
-        // --- 3. DOM ELEMENT REFERENCES ---
-        const appContent = document.getElementById('app-content');
-        const navTabs = document.querySelectorAll('.nav-tab');
-        const addNewBtn = document.getElementById('add-new-btn');
-        const chooserModal = document.getElementById('add-new-chooser-modal');
-        const formModal = document.getElementById('form-modal');
-        const viewModal = document.getElementById('view-modal');
-        const passwordModal = document.getElementById('password-modal');
-        const mainForm = document.getElementById('main-form');
-        const toast = document.getElementById('toast');
-        
-        let passwordConfirmCallback = null;
-        let playerToShareId = null;
-
-        // --- 4. DATA PERSISTENCE ---
-
-        const getInitialData = () => {
-            // THIS IS THE BUILT-IN DATA. It will load every time the app starts fresh.
-            return {
-                players: [
-                    { id: 'player1', firstName: "Leon", lastName: "Goretzka", gender: "Male", dob: "1995-02-06", club: "Bayern Munich", positions: ["Central Midfielder (CM)", "Attacking Midfielder (AM)"], positionCategory: "Midfielders", salary: "> €40k/month", cvLink: "https://www.transfermarkt.com/leon-goretzka/profil/spieler/153084", videos: [], highlight: true },
-                    { id: 'player2', firstName: "Alessia", lastName: "Russo", gender: "Female", dob: "1999-02-08", club: "Arsenal WFC", positions: ["Striker (ST)"], positionCategory: "Forwards", salary: "€10k - €20k/month", cvLink: "https://www.transfermarkt.com/alessia-russo/profil/spieler/340845", videos: [], highlight: true },
-                    { id: 'player3', firstName: "David", lastName: "Alaba", gender: "Male", dob: "1992-06-24", club: "Real Madrid", positions: ["Centre-Back (CB)", "Left-Back (LB)"], positionCategory: "Defenders", salary: "€20k - €40k/month", cvLink: "", videos: [], highlight: false },
-                    { id: 'player4', firstName: "Manuel", lastName: "Neuer", gender: "Male", dob: "1986-03-27", club: "Bayern Munich", positions: ["Goalkeeper (GK)"], positionCategory: "Goalkeepers", salary: "> €40k/month", cvLink: "https://www.transfermarkt.de/manuel-neuer/profil/spieler/17259", videos: ["https://www.youtube.com/watch?v=HrnQD0THaTY"], highlight: true },
-                ],
-                clubs: [
-                    { id: 'club1', createdAt: new Date('2025-08-09T12:00:00Z').toISOString(), name: "Manchester United", country: "England", leagueGender: "Male", positions: ["Striker (ST)", "Central Midfielder (CM)"], budget: "> €40k/month", direct: true },
-                    { id: 'club2', createdAt: new Date('2025-08-01T10:00:00Z').toISOString(), name: "Chelsea FC Women", country: "England", leagueGender: "Female", positions: ["Striker (ST)"], budget: "€20k - €40k/month", direct: false }
-                ],
-                contacts: [
-                    { id: 'contact1', firstName: "Pep", lastName: "Guardiola", role: "Coach", club: "Manchester City", phone: "", email: "", connection: "" },
-                    { id: 'contact2', firstName: "Emma", lastName: "Hayes", role: "Coach", club: "Chelsea FC Women", phone: "", email: "", connection: "" }
-                ],
-                reminders: [
-                    { text: "Follow up with AC Milan about the winger", done: false },
-                    { text: "Send player profile to scout", done: true }
-                ],
-                introMessage: "Dear Sporting Director,\n\nMy name is Zoran Veljanovski (FIFA ID: 202405-6005), and I am a licensed FIFA Football Agent. I am reaching out to introduce a player who I believe possesses the qualities to significantly strengthen your squad.\n\nPlease let me know if you are open to receiving more details, including video highlights and a full performance report.\n\nBest regards,\nZoran Veljanovski"
-            };
+        // Get values from the form
+        const newPlayer = {
+            id: Date.now(), // Unique ID for each player
+            name: document.getElementById('playerName').value,
+            age: parseInt(document.getElementById('playerAge').value),
+            position: document.getElementById('playerPosition').value,
+            club: document.getElementById('playerClub').value,
+            value: parseFloat(document.getElementById('marketValue').value),
+            commission: parseFloat(document.getElementById('agentCommission').value)
         };
         
-        const saveData = () => {
-            try {
-                localStorage.setItem('sportTalentData', JSON.stringify(AppState.data));
-                showToast('Data saved!');
-            } catch (e) {
-                console.error("Could not save to localStorage. It might be blocked or full.", e);
-                showToast('Could not save data.');
-            }
-        };
-
-        const loadData = () => {
-            const savedData = localStorage.getItem('sportTalentData');
-            if (savedData) {
-                try {
-                    const parsedData = JSON.parse(savedData);
-                    if (parsedData.players) { // Simple check to see if data is valid
-                        AppState.data = parsedData;
-                        return; 
-                    }
-                } catch (e) {
-                    console.error("Could not parse localStorage data. Reverting to initial data.", e);
-                }
-            }
-            AppState.data = getInitialData();
-        };
-
-        // --- 5. CORE RENDERING LOGIC ---
-        const render = () => {
-            AppState.scrollPos = window.scrollY;
-            appContent.innerHTML = '';
-            
-            switch (AppState.activeTab) {
-                case 'dashboard': renderDashboard(); break;
-                case 'players': renderPlayers(); break;
-                case 'clubs': renderClubRequests(); break;
-                case 'contacts': renderContacts(); break;
-            }
-            
-            window.scrollTo(0, AppState.scrollPos);
-        };
-
-        // --- 6. VIEW-SPECIFIC RENDERERS ---
-
-        const renderDashboard = () => {
-            const compatibleCombinations = findCompatibleCombinations();
-            appContent.innerHTML = `
-                <div class="dashboard-grid">
-                    <div class="dashboard-section">
-                        <h2>
-                            <span>Reminders</span>
-                            <button id="add-reminder-btn">+</button>
-                        </h2>
-                        <div id="reminders-list">
-                            ${AppState.data.reminders.length > 0 ? AppState.data.reminders.map(renderReminder).join('') : '<p class="no-content">No reminders yet.</p>'}
-                        </div>
-                    </div>
-                    <div class="dashboard-section">
-                        <h2>Compatible Combinations</h2>
-                        <div id="combinations-list">
-                            ${compatibleCombinations.length > 0 ? compatibleCombinations.map(renderCombination).join('') : '<p class="no-content">No compatible combinations found.</p>'}
-                        </div>
-                    </div>
-                    <div class="dashboard-section intro-message">
-                        <h2>My Intro Message</h2>
-                        <textarea id="intro-message-text">${AppState.data.introMessage}</textarea>
-                        <div class="actions">
-                            <button id="save-intro-btn" class="btn-save">Save</button>
-                            <button id="share-intro-btn" class="btn-share">Copy & Share</button>
-                        </div>
-                    </div>
-                </div>`;
-        };
+        // Add new player to the array
+        players.push(newPlayer);
         
-        const renderReminder = (reminder, index) => `
-            <div class="reminder ${reminder.done ? 'done' : ''}">
-                <input type="checkbox" data-index="${index}" class="reminder-check" ${reminder.done ? 'checked' : ''}>
-                <label>${reminder.text}</label>
-                <button class="btn-delete-reminder" data-index="${index}" title="Delete Reminder">&times;</button>
-            </div>`;
-        
-        const renderCombination = (combo) => `
-            <div class="combination-card">
-                <h4>${combo.club.name} (${combo.club.country}) is looking for:</h4>
-                <p><strong>League:</strong> ${combo.club.leagueGender}'s League</p>
-                <p><strong>Positions:</strong> ${combo.club.positions.join(', ')}</p>
-                <p><strong>Budget:</strong> ${combo.club.budget}</p>
-                <hr>
-                ${combo.players.map(p => `
-                    <div class="player-match">
-                        <strong>Match:</strong> ${p.firstName} ${p.lastName} (${calculateAge(p.dob)}y, ${p.positions.join('/')})
-                    </div>
-                `).join('')}
-            </div>`;
+        // Re-render the UI
+        updateUI();
 
-        const renderPlayers = () => {
-            const filters = AppState.filters.players;
-            let filteredPlayers = AppState.data.players;
-
-            if (filters.highlighted) {
-                filteredPlayers = filteredPlayers.filter(p => p.highlight);
-            }
-            if (filters.gender !== 'all') {
-                filteredPlayers = filteredPlayers.filter(p => p.gender.toLowerCase() === filters.gender);
-            }
-            
-            const groupedPlayers = groupAndSort(filteredPlayers, 'positionCategory', (a, b) => a.firstName.localeCompare(b.firstName));
-
-            appContent.innerHTML = `
-                <div class="filters">
-                    <div class="toggle-group">
-                        <button class="filter-btn-gender ${filters.gender === 'all' ? 'active' : ''}" data-value="all">All</button>
-                        <button class="filter-btn-gender ${filters.gender === 'male' ? 'active' : ''}" data-value="male">Men</button>
-                        <button class="filter-btn-gender ${filters.gender === 'female' ? 'active' : ''}" data-value="female">Women</button>
-                    </div>
-                    <div class="toggle-group">
-                         <button class="filter-btn-highlight ${filters.highlighted ? 'active' : ''}">Highlighted</button>
-                    </div>
-                </div>
-                <div id="player-list-content"></div>`;
-            
-            const listContent = document.getElementById('player-list-content');
-            if(Object.values(groupedPlayers).length > 0) {
-                 listContent.innerHTML = Object.keys(CONFIG.POSITIONS).map(category => {
-                    if (!groupedPlayers[category] || groupedPlayers[category].length === 0) return '';
-                    return `
-                        <h2 class="group-header">${category}</h2>
-                        <div class="card-grid">
-                            ${groupedPlayers[category].map(player => renderCard(player, 'player')).join('')}
-                        </div>`;
-                }).join('');
-            } else {
-                 listContent.innerHTML = `<p class="no-content">No players match the current filters.</p>`;
-            }
-        };
-
-        const renderClubRequests = () => {
-            const filters = AppState.filters.clubs;
-            let filteredClubs = [...AppState.data.clubs]; 
-            
-            if (filters.direct) filteredClubs = filteredClubs.filter(c => c.direct);
-            if (filters.position !== 'all') filteredClubs = filteredClubs.filter(c => c.positions.includes(filters.position));
-            if (filters.budget !== 'all') filteredClubs = filteredClubs.filter(c => c.budget === filters.budget);
-            if (filters.country !== 'all') filteredClubs = filteredClubs.filter(c => c.country === filters.country);
-
-            if (filters.sortBy === 'newest') {
-                filteredClubs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-            }
-            
-            appContent.innerHTML = `
-                 <div class="filters">
-                    <select id="club-filter-sort" class="club-filter-select">
-                        <option value="newest" ${filters.sortBy === 'newest' ? 'selected' : ''}>Newest</option>
-                    </select>
-                    <select id="club-filter-position" class="club-filter-select">
-                        <option value="all">All Positions</option>
-                        ${ALL_POSITIONS.map(p => `<option value="${p}" ${filters.position === p ? 'selected' : ''}>${p}</option>`).join('')}
-                    </select>
-                    <select id="club-filter-budget" class="club-filter-select">
-                        <option value="all">All Budgets</option>
-                        ${CONFIG.BUDGET_RANGES.map(b => `<option value="${b}" ${filters.budget === b ? 'selected' : ''}>${b}</option>`).join('')}
-                    </select>
-                     <select id="club-filter-country" class="club-filter-select">
-                        <option value="all">All Countries</option>
-                        ${CONFIG.COUNTRIES.map(c => `<option value="${c}" ${filters.country === c ? 'selected' : ''}>${c}</option>`).join('')}
-                    </select>
-                    <button id="club-filter-direct" class="${filters.direct ? 'active-direct' : ''}">DIRECT</button>
-                </div>
-                <div class="card-grid">
-                    ${filteredClubs.length > 0 ? filteredClubs.map(club => renderCard(club, 'club')).join('') : '<p class="no-content">No club requests match filters.</p>'}
-                </div>`;
-        };
-
-        const renderContacts = () => {
-             const groupedContacts = groupAndSort(AppState.data.contacts, 'role', (a, b) => a.lastName.localeCompare(b.lastName));
-            appContent.innerHTML = Object.keys(groupedContacts).length > 0 ? CONFIG.CONTACT_ROLES.map(role => {
-                if (!groupedContacts[role]) return '';
-                return `
-                    <h2 class="group-header">${role}s</h2>
-                    <div class="card-grid">
-                        ${groupedContacts[role].map(contact => renderCard(contact, 'contact')).join('')}
-                    </div>`;
-            }).join('') : `<p class="no-content">No contacts found.</p>`;
-        };
-        
-        const renderCard = (item, type) => {
-            let content = '', actions = '', cardClasses = 'card';
-            switch (type) {
-                case 'player':
-                    cardClasses += ` player-card ${item.gender.toLowerCase()} ${item.highlight ? 'highlighted' : ''}`;
-                    content = `
-                        <div class="card-header">
-                            <h3>${item.firstName} ${item.lastName} ${item.highlight ? '&#9733;' : ''}</h3>
-                        </div>
-                        <div class="card-info">
-                           <strong>Position(s):</strong> ${item.positions.join(', ')}<br>
-                           <strong>Club:</strong> ${item.club || 'Free Agent'}<br>
-                           <strong>Age:</strong> ${calculateAge(item.dob)} (DOB: ${item.dob})
-                        </div>`;
-                    actions = `
-                        <button class="btn-view" data-type="${type}" data-id="${item.id}">View Profile</button>
-                        <button class="btn-edit" data-type="${type}" data-id="${item.id}">Edit</button>
-                        <button class="btn-delete" data-type="${type}" data-id="${item.id}">Delete</button>`;
-                    break;
-                case 'club':
-                    content = `
-                        <div class="card-header">
-                            <h3>${item.name} ${item.direct ? '<span style="color:var(--success-color); font-size: 0.8em;">(DIRECT)</span>' : ''}</h3>
-                        </div>
-                         <div class="card-info">
-                           <strong>Country:</strong> ${item.country}<br>
-                           <strong>League:</strong> ${item.leagueGender}'s League<br>
-                           <strong>Positions:</strong> ${item.positions.join(', ')}<br>
-                           <strong>Budget:</strong> ${item.budget}
-                        </div>`;
-                    actions = `
-                        <button class="btn-edit" data-type="${type}" data-id="${item.id}">Edit</button>
-                        <button class="btn-delete" data-type="${type}" data-id="${item.id}">Delete</button>`;
-                    break;
-                case 'contact':
-                    content = `
-                        <div class="card-header">
-                            <h3>${item.firstName} ${item.lastName}</h3>
-                        </div>
-                        <div class="card-info">
-                           <strong>Role:</strong> ${item.role}<br>
-                           <strong>Club:</strong> ${item.club || 'Without a Club'}
-                        </div>`;
-                    actions = `
-                        <button class="btn-edit" data-type="${type}" data-id="${item.id}">Edit</button>
-                        <button class="btn-delete" data-type="${type}" data-id="${item.id}">Delete</button>`;
-                    break;
-            }
-            return `<div class="${cardClasses}">${content}<div class="card-actions">${actions}</div></div>`;
-        };
-        
-        // --- 7. MODAL & FORM LOGIC ---
-        
-        const openModal = (type, id = null) => {
-            const isEditing = id !== null;
-            let item = {}, title = '';
-            
-            mainForm.innerHTML = '';
-            mainForm.dataset.type = type;
-            mainForm.dataset.id = id || '';
-            
-            switch (type) {
-                case 'player':
-                    title = isEditing ? 'Edit Player' : 'Add Player';
-                    if (isEditing) item = AppState.data.players.find(p => p.id === id);
-                    mainForm.innerHTML = getPlayerFormHtml(item);
-                    mainForm.querySelector('#player-gender').addEventListener('change', e => {
-                        if (e.target.value === 'Female') mainForm.querySelector('#player-highlight').checked = true;
-                    });
-                    break;
-                case 'club':
-                    title = isEditing ? 'Edit Club Request' : 'Add Club Request';
-                    if (isEditing) item = AppState.data.clubs.find(c => c.id === id);
-                    mainForm.innerHTML = getClubFormHtml(item);
-                    break;
-                case 'contact':
-                    title = isEditing ? 'Edit Contact' : 'Add Contact';
-                    if (isEditing) item = AppState.data.contacts.find(c => c.id === id);
-                    mainForm.innerHTML = getContactFormHtml(item);
-                     mainForm.querySelector('#contact-no-club').addEventListener('change', e => {
-                        mainForm.querySelector('#contact-club').disabled = e.target.checked;
-                     });
-                    break;
-                case 'reminder':
-                    title = 'Add Reminder';
-                    mainForm.innerHTML = getReminderFormHtml();
-                    break;
-            }
-            
-            document.getElementById('modal-title').textContent = title;
-            formModal.classList.add('visible');
-        };
-
-        const openViewPlayerModal = (id) => {
-            const player = AppState.data.players.find(p => p.id === id);
-            if (!player) return;
-            playerToShareId = id;
-
-            const contentEl = document.getElementById('view-modal-content');
-            document.getElementById('view-modal-title').textContent = `${player.firstName} ${player.lastName}`;
-            
-            contentEl.innerHTML = `
-                <p><strong>Age:</strong> ${calculateAge(player.dob)}</p>
-                <p><strong>Gender:</strong> ${player.gender}</p>
-                <p><strong>Club:</strong> ${player.club || 'Free Agent'}</p>
-                <p><strong>Position(s):</strong> ${player.positions.join(', ')}</p>
-                <p><strong>Salary Expectation:</strong> ${player.salary}</p>
-                <p><strong>CV:</strong> ${player.cvLink ? `<a href="${player.cvLink}" target="_blank" rel="noopener noreferrer">${player.cvLink}</a>` : 'N/A'}</p>
-                <div><strong>Videos:</strong>
-                    ${player.videos.length > 0 ? `<ul>${player.videos.map(v => `<li><a href="${v}" target="_blank" rel="noopener noreferrer">${v}</a></li>`).join('')}</ul>` : '<p style="display:inline;">N/A</p>'}
-                </div>
-            `;
-            viewModal.classList.add('visible');
-        };
-        
-        const closeModal = (modal) => modal.classList.remove('visible');
-
-        const handleFormSubmit = (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
-            const type = e.target.dataset.type;
-            const id = e.target.dataset.id;
-
-            try {
-                switch (type) {
-                    case 'player':
-                        updateOrAddItem({
-                            id: id || generateId(), firstName: data.firstName, lastName: data.lastName, gender: data.gender, dob: data.dob, club: data.club,
-                            positions: formData.getAll('positions'), positionCategory: getPositionCategory(formData.getAll('positions')[0]), salary: data.salary,
-                            cvLink: data.cvLink, videos: [data.video1, data.video2, data.video3].filter(v => v), highlight: data.highlight === 'on',
-                        }, 'players');
-                        break;
-                    case 'club':
-                        const existingClub = id ? AppState.data.clubs.find(c => c.id === id) : null;
-                        updateOrAddItem({
-                           id: id || generateId(), createdAt: existingClub ? existingClub.createdAt : new Date().toISOString(),
-                           name: data.name, country: data.country, leagueGender: data.leagueGender, positions: formData.getAll('positions'), budget: data.budget, direct: data.direct === 'on'
-                        }, 'clubs');
-                        break;
-                    case 'contact':
-                         updateOrAddItem({
-                           id: id || generateId(), firstName: data.firstName, lastName: data.lastName, role: data.role,
-                           club: data.noClub === 'on' ? '' : data.club, phone: data.phone, email: data.email, connection: data.connection
-                        }, 'contacts');
-                        break;
-                    case 'reminder':
-                        AppState.data.reminders.push({ text: data.text, done: false });
-                        break;
-                }
-                saveData();
-                render();
-                closeModal(formModal);
-            } catch (error) {
-                console.error("Form submission error:", error);
-                alert(`Error saving data: ${error.message}`);
-            }
-        };
-
-        // --- 8. HTML GENERATORS FOR FORMS ---
-        const getPlayerFormHtml = (p = {}) => `
-            <div class="form-group"><label for="player-firstname">First Name</label><input type="text" id="player-firstname" name="firstName" value="${p.firstName || ''}" required></div>
-            <div class="form-group"><label for="player-lastname">Last Name</label><input type="text" id="player-lastname" name="lastName" value="${p.lastName || ''}" required></div>
-            <div class="form-group"><label for="player-gender">Gender</label><select id="player-gender" name="gender" required>${CONFIG.LEAGUE_GENDERS.map(g=>`<option value="${g}" ${p.gender===g?'selected':''}>${g}</option>`).join('')}</select></div>
-            <div class="form-group"><label for="player-dob">Date of Birth</label><input type="date" id="player-dob" name="dob" value="${p.dob || ''}" required></div>
-            <div class="form-group"><label for="player-club">Current Club</label><input type="text" id="player-club" name="club" value="${p.club || ''}" placeholder="Or leave blank for Free Agent"></div>
-            <div class="form-group"><label for="player-positions">Position(s)</label><select id="player-positions" name="positions" multiple required>${ALL_POSITIONS.map(pos => `<option value="${pos}" ${(p.positions || []).includes(pos) ? 'selected' : ''}>${pos}</option>`).join('')}</select></div>
-            <div class="form-group"><label for="player-salary">Salary Expectation</label><select id="player-salary" name="salary" required>${CONFIG.SALARY_RANGES.map(s => `<option value="${s}" ${p.salary === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
-            <div class="form-group"><label for="player-cv">CV Link (Transfermarkt, etc.)</label><input type="url" id="player-cv" name="cvLink" value="${p.cvLink || ''}" placeholder="https://..."></div>
-            <div class="form-group"><label>Video Links</label>
-                <input type="url" name="video1" placeholder="https://youtube.com/..." value="${(p.videos || [])[0] || ''}"><input type="url" name="video2" placeholder="Video Link 2" value="${(p.videos || [])[1] || ''}" style="margin-top:0.5rem"><input type="url" name="video3" placeholder="Video Link 3" value="${(p.videos || [])[2] || ''}" style="margin-top:0.5rem"></div>
-            <div class="form-group"><div class="checkbox-group"><input type="checkbox" id="player-highlight" name="highlight" ${p.highlight ? 'checked' : ''}><label for="player-highlight">Highlight Player</label></div></div>
-            <div class="modal-actions"><button type="button" class="btn-cancel close-modal-btn">Cancel</button><button type="submit" class="btn-submit">Save Player</button></div>`;
-        
-        const getClubFormHtml = (c = {}) => `
-            <div class="form-group"><label for="club-name">Club Name</label><input type="text" id="club-name" name="name" value="${c.name || ''}" required></div>
-            <div class="form-group"><label for="club-country">Country</label><select id="club-country" name="country" required>${CONFIG.COUNTRIES.map(co => `<option value="${co}" ${c.country === co ? 'selected' : ''}>${co}</option>`).join('')}</select></div>
-            <div class="form-group"><label for="club-league-gender">League Gender</label><select id="club-league-gender" name="leagueGender" required>${CONFIG.LEAGUE_GENDERS.map(g=>`<option value="${g}" ${c.leagueGender===g?'selected':''}>${g}'s League</option>`).join('')}</select></div>
-            <div class="form-group"><label for="club-positions">Positions Needed</label><select id="club-positions" name="positions" multiple required>${ALL_POSITIONS.map(pos => `<option value="${pos}" ${(c.positions || []).includes(pos) ? 'selected' : ''}>${pos}</option>`).join('')}</select></div>
-            <div class="form-group"><label for="club-budget">Budget</label><select id="club-budget" name="budget" required>${CONFIG.BUDGET_RANGES.map(b => `<option value="${b}" ${c.budget === b ? 'selected' : ''}>${b}</option>`).join('')}</select></div>
-            <div class="form-group"><div class="checkbox-group"><input type="checkbox" id="club-direct" name="direct" ${c.direct ? 'checked' : ''}><label for="club-direct">DIRECT Request</label></div></div>
-            <div class="modal-actions"><button type="button" class="btn-cancel close-modal-btn">Cancel</button><button type="submit" class="btn-submit">Save Request</button></div>`;
-        
-        const getContactFormHtml = (c = {}) => `
-            <div class="form-group"><label for="contact-firstname">First Name</label><input type="text" id="contact-firstname" name="firstName" value="${c.firstName || ''}" required></div>
-            <div class="form-group"><label for="contact-lastname">Last Name</label><input type="text" id="contact-lastname" name="lastName" value="${c.lastName || ''}" required></div>
-            <div class="form-group"><label for="contact-role">Role</label><select id="contact-role" name="role" required>${CONFIG.CONTACT_ROLES.map(r => `<option value="${r}" ${c.role === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
-            <div class="form-group"><label for="contact-club">Club</label><input type="text" id="contact-club" name="club" value="${c.club || ''}" ${!c.club && c.club !== undefined ? 'disabled' : ''}>
-                <div class="checkbox-group" style="margin-top: 0.5rem"><input type="checkbox" id="contact-no-club" name="noClub" ${!c.club && c.club !== undefined ? 'checked' : ''}><label for="contact-no-club">Without a Club</label></div></div>
-            <div class="form-group"><label for="contact-phone">Phone Number</label><input type="tel" id="contact-phone" name="phone" value="${c.phone || ''}"></div>
-            <div class="form-group"><label for="contact-email">Email</label><input type="email" id="contact-email" name="email" value="${c.email || ''}"></div>
-            <div class="form-group"><label for="contact-connection">Connection (LinkedIn, etc)</label><input type="url" id="contact-connection" name="connection" value="${c.connection || ''}"></div>
-            <div class="modal-actions"><button type="button" class="btn-cancel close-modal-btn">Cancel</button><button type="submit" class="btn-submit">Save Contact</button></div>`;
-        
-        const getReminderFormHtml = () => `
-            <div class="form-group"><label for="reminder-text">Reminder Text</label><input type="text" id="reminder-text" name="text" required></div>
-            <div class="modal-actions"><button type="button" class="btn-cancel close-modal-btn">Cancel</button><button type="submit" class="btn-submit">Add Reminder</button></div>`;
-        
-        // --- 9. EVENT LISTENERS ---
-        const setupEventListeners = () => {
-            document.querySelector('nav').addEventListener('click', e => {
-                if (e.target.matches('.nav-tab')) {
-                    AppState.activeTab = e.target.dataset.tab;
-                    navTabs.forEach(t => t.classList.remove('active'));
-                    e.target.classList.add('active');
-                    render();
-                }
-            });
-            
-            addNewBtn.addEventListener('click', () => chooserModal.classList.add('visible'));
-            chooserModal.addEventListener('click', e => {
-                if (e.target === chooserModal || e.target.closest('.close-modal-btn')) closeModal(chooserModal);
-                else if (e.target.dataset.type) {
-                    closeModal(chooserModal);
-                    openModal(e.target.dataset.type);
-                }
-            });
-
-            mainForm.addEventListener('submit', handleFormSubmit);
-            document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => {
-                if (e.target === m) closeModal(m)
-            }));
-            document.querySelectorAll('.close-modal-btn').forEach(b => b.addEventListener('click', e => closeModal(e.target.closest('.modal-overlay'))));
-
-            appContent.addEventListener('click', handleAppContentClick);
-            appContent.addEventListener('change', handleAppContentChange);
-            
-            document.getElementById('password-form').addEventListener('submit', e => {
-                e.preventDefault();
-                const passwordInput = document.getElementById('password-input');
-                if (passwordInput.value === MASTER_PASSWORD) {
-                    if (passwordConfirmCallback) passwordConfirmCallback();
-                    passwordConfirmCallback = null;
-                    closeModal(passwordModal);
-                    passwordInput.value = '';
-                } else {
-                    alert('Incorrect password. Please try again.');
-                    passwordInput.value = '';
-                }
-            });
-
-            document.getElementById('copy-details-btn').addEventListener('click', handleCopyDetails);
-        };
-
-        const handleAppContentClick = (e) => {
-            const target = e.target;
-            
-            if (target.matches('.btn-view')) openViewPlayerModal(target.dataset.id);
-            else if (target.matches('.btn-edit')) openModal(target.dataset.type, target.dataset.id);
-            else if (target.matches('.btn-delete')) confirmWithPassword(() => {
-                deleteItem(target.dataset.type, target.dataset.id);
-                saveData();
-                render();
-            });
-            else if (target.matches('.btn-delete-reminder')) confirmWithPassword(() => {
-                const index = parseInt(target.dataset.index, 10);
-                AppState.data.reminders.splice(index, 1);
-                saveData();
-                render();
-            });
-            else if (target.id === 'add-reminder-btn') openModal('reminder');
-            else if (target.matches('.reminder-check')) {
-                const index = parseInt(target.dataset.index, 10);
-                AppState.data.reminders[index].done = target.checked;
-                saveData();
-                render();
-            }
-            else if (target.id === 'save-intro-btn') {
-                AppState.data.introMessage = document.getElementById('intro-message-text').value;
-                saveData();
-            }
-            else if (target.id === 'share-intro-btn') {
-                navigator.clipboard.writeText(document.getElementById('intro-message-text').value)
-                    .then(() => showToast('Message copied to clipboard!'))
-                    .catch(() => showToast('Failed to copy message.'));
-            }
-            else if (target.matches('.filter-btn-gender')) {
-                AppState.filters.players.gender = target.dataset.value;
-                render();
-            } else if (target.matches('.filter-btn-highlight')) {
-                 AppState.filters.players.highlighted = !AppState.filters.players.highlighted;
-                 render();
-            } else if (target.matches('#club-filter-direct')) {
-                AppState.filters.clubs.direct = !AppState.filters.clubs.direct;
-                render();
-            }
-        };
-        
-        const handleAppContentChange = (e) => {
-             if (e.target.matches('.club-filter-select')) {
-                const filters = AppState.filters.clubs;
-                filters.sortBy = document.getElementById('club-filter-sort').value;
-                filters.position = document.getElementById('club-filter-position').value;
-                filters.budget = document.getElementById('club-filter-budget').value;
-                filters.country = document.getElementById('club-filter-country').value;
-                render();
-            }
-        };
-
-        const handleCopyDetails = () => {
-            if (!playerToShareId) return;
-            const player = AppState.data.players.find(p => p.id === playerToShareId);
-            if (!player) return;
-
-            const details = [
-                `Player Profile: ${player.firstName} ${player.lastName}`,
-                `Age: ${calculateAge(player.dob)} (DOB: ${player.dob})`,
-                `Position(s): ${player.positions.join(', ')}`,
-                `Current Club: ${player.club || 'Free Agent'}`,
-                `Salary Expectation: ${player.salary}`,
-                `CV Link: ${player.cvLink || 'N/A'}`,
-                `Videos:\n${player.videos.length > 0 ? player.videos.join('\n') : 'N/A'}`
-            ].join('\n');
-            
-            navigator.clipboard.writeText(details)
-                .then(() => showToast('Player details copied!'))
-                .catch(() => showToast('Failed to copy details.'));
-        };
-
-        // --- 10. UTILITY & HELPER FUNCTIONS ---
-        const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
-        const calculateAge = (dobString) => {
-            if (!dobString) return 'N/A';
-            const age = new Date().getFullYear() - new Date(dobString).getFullYear();
-            return age > 0 ? age : 'N/A';
-        };
-        const getPositionCategory = (position) => Object.keys(CONFIG.POSITIONS).find(cat => CONFIG.POSITIONS[cat].includes(position)) || 'Other';
-        const groupAndSort = (items, groupKey, sortFn) => {
-            const grouped = items.reduce((acc, item) => {
-                (acc[item[groupKey]] = acc[item[groupKey]] || []).push(item);
-                return acc;
-            }, {});
-            Object.values(grouped).forEach(group => group.sort(sortFn));
-            return grouped;
-        };
-        const updateOrAddItem = (item, collectionName) => {
-            const index = AppState.data[collectionName].findIndex(i => i.id === item.id);
-            if (index > -1) AppState.data[collectionName][index] = item;
-            else AppState.data[collectionName].push(item);
-        };
-        const deleteItem = (type, id) => {
-            const coll = `${type}s`;
-            AppState.data[coll] = AppState.data[coll].filter(item => item.id !== id);
-        };
-        const confirmWithPassword = (callback) => {
-            passwordConfirmCallback = callback;
-            passwordModal.classList.add('visible');
-            document.getElementById('password-input').focus();
-        };
-        const showToast = (message) => {
-            toast.textContent = message;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
-        };
-        
-        // --- 11. CORE BUSINESS LOGIC ---
-        const findCompatibleCombinations = () => {
-            const matches = [];
-            const sortedClubs = [...AppState.data.clubs].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-            sortedClubs.forEach(club => {
-                const clubBudgetIndex = CONFIG.BUDGET_RANGES.indexOf(club.budget);
-                const matchedPlayers = AppState.data.players.filter(player => {
-                    const genderMatch = player.gender === club.leagueGender;
-                    const positionMatch = player.positions.some(pPos => club.positions.includes(pPos));
-                    const salaryIndex = CONFIG.SALARY_RANGES.indexOf(player.salary);
-                    const budgetMatch = club.budget === "Flexible" || salaryIndex <= clubBudgetIndex;
-                    return genderMatch && positionMatch && budgetMatch;
-                });
-
-                if (matchedPlayers.length > 0) {
-                    matches.push({ club: club, players: matchedPlayers });
-                }
-            });
-            return matches;
-        };
-
-        // --- 12. INITIALIZATION ---
-        const init = () => {
-            loadData();
-            setupEventListeners();
-            render();
-        };
-        
-        init();
+        // Reset the form for the next entry
+        form.reset();
     });
-    </script>
+
+    // Function to render the entire UI (table and summary)
+    function updateUI() {
+        renderTable();
+        updateSummary();
+    }
+
+    // Function to render the player table
+    function renderTable() {
+        tableBody.innerHTML = ''; // Clear existing table rows
+
+        if (players.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No players in your roster yet.</td></tr>';
+            return;
+        }
+
+        players.forEach(player => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${player.name}</td>
+                <td>${player.age}</td>
+                <td>${player.position}</td>
+                <td>${player.club}</td>
+                <td>${player.value.toLocaleString('de-DE')}</td>
+                <td>${player.commission}%</td>
+                <td><button class="delete-btn" onclick="deletePlayer(${player.id})">Delete</button></td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // Function to update the summary statistics
+    function updateSummary() {
+        const totalPlayers = players.length;
+        const totalValue = players.reduce((sum, player) => sum + player.value, 0);
+        const totalCommission = players.reduce((sum, player) => sum + (player.value * (player.commission / 100)), 0);
+
+        totalPlayersEl.textContent = totalPlayers;
+        totalValueEl.textContent = `€${totalValue.toLocaleString('de-DE')}`;
+        totalCommissionEl.textContent = `€${totalCommission.toLocaleString('de-DE')}`;
+    }
+
+    // Function to delete a player by their ID
+    function deletePlayer(id) {
+        players = players.filter(player => player.id !== id);
+        updateUI(); // Re-render everything after deletion
+    }
+    
+    // Function to add some initial data for demonstration
+    function addInitialData() {
+        players = [
+            { id: Date.now() + 1, name: 'Jamal Musiala', age: 22, position: 'Midfielder', club: 'Bayern Munich', value: 120000000, commission: 10 },
+            { id: Date.now() + 2, name: 'Florian Wirtz', age: 22, position: 'Midfielder', club: 'Bayer Leverkusen', value: 130000000, commission: 8 }
+        ];
+        updateUI();
+    }
+
+    // Load initial data when the page loads
+    window.onload = addInitialData;
+
+</script>
+
 </body>
 </html>
